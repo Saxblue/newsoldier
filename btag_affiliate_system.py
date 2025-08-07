@@ -503,6 +503,8 @@ def show_dashboard():
         for date in recent_dates:
             date_deposits = 0
             date_withdrawals = 0
+            date_deposit_count = 0
+            date_withdrawal_count = 0
             
             for btag, records in daily_data[date].items():
                 for record in records:
@@ -511,11 +513,15 @@ def show_dashboard():
                     if member_id in active_member_ids:
                         date_deposits += record.get('total_deposits', 0)
                         date_withdrawals += record.get('total_withdrawals', 0)
+                        date_deposit_count += record.get('deposit_count', 0)
+                        date_withdrawal_count += record.get('withdrawal_count', 0)
             
             daily_stats.append({
                 'Tarih': date,
-                'Yatırım': date_deposits,
-                'Çekim': date_withdrawals,
+                'Yatırım Adedi': date_deposit_count,
+                'Yatırım Miktarı': date_deposits,
+                'Çekim Adedi': date_withdrawal_count,
+                'Çekim Miktarı': date_withdrawals,
                 'Net': date_deposits - date_withdrawals
             })
         
@@ -523,9 +529,9 @@ def show_dashboard():
             df_stats = pd.DataFrame(daily_stats)
             
             # Grafik
-            fig = px.bar(df_stats, x='Tarih', y=['Yatırım', 'Çekim'], 
+            fig = px.bar(df_stats, x='Tarih', y=['Yatırım Miktarı', 'Çekim Miktarı'], 
                         title='Son 7 Günün Yatırım-Çekim Grafiği',
-                        color_discrete_map={'Yatırım': 'green', 'Çekim': 'red'})
+                        color_discrete_map={'Yatırım Miktarı': 'green', 'Çekim Miktarı': 'red'})
             st.plotly_chart(fig, use_container_width=True)
             
             # Tablo
@@ -535,8 +541,8 @@ def show_dashboard():
             
             styled_df = df_stats.style.map(color_net, subset=['Net'])
             styled_df = styled_df.format({
-                'Yatırım': '{:,.0f} TL',
-                'Çekim': '{:,.0f} TL', 
+                'Yatırım Miktarı': '{:,.0f} TL',
+                'Çekim Miktarı': '{:,.0f} TL', 
                 'Net': '{:,.0f} TL'
             })
             st.dataframe(styled_df, use_container_width=True)
@@ -616,7 +622,16 @@ def show_excel_upload():
                     st.subheader("📊 İşlenmiş Veriler")
                     
                     display_df = processed_data.copy()
-                    display_df['Toplam'] = display_df['total_deposits'] - display_df['total_withdrawals']
+                    display_df = display_df.rename(columns={
+                        'member_id': 'Üye ID',
+                        'username': 'Kullanıcı Adı',
+                        'customer_name': 'Müşteri Adı',
+                        'deposit_count': 'Yatırım Adedi',
+                        'total_deposits': 'Yatırım Miktarı',
+                        'withdrawal_count': 'Çekim Adedi',
+                        'total_withdrawals': 'Çekim Miktarı'
+                    })
+                    display_df['Net Miktar'] = display_df['Yatırım Miktarı'] - display_df['Çekim Miktarı']
                     
                     def highlight_totals(val):
                         if val > 0:
@@ -626,7 +641,12 @@ def show_excel_upload():
                         else:
                             return 'background-color: lightgray'
                     
-                    styled_df = display_df.style.map(highlight_totals, subset=['Toplam'])
+                    styled_df = display_df.style.map(highlight_totals, subset=['Net Miktar'])
+                    styled_df = styled_df.format({
+                        'Yatırım Miktarı': '{:,.0f} TL',
+                        'Çekim Miktarı': '{:,.0f} TL',
+                        'Net Miktar': '{:,.0f} TL'
+                    })
                     st.dataframe(styled_df, use_container_width=True)
                     
                     # Kayıt işlemi
@@ -848,6 +868,8 @@ def show_reports():
                             
                         deposits = record.get('total_deposits', 0)
                         withdrawals = record.get('total_withdrawals', 0)
+                        deposit_count = record.get('deposit_count', 0)
+                        withdrawal_count = record.get('withdrawal_count', 0)
                         
                         filtered_data.append({
                             'Tarih': date_str,
@@ -855,7 +877,9 @@ def show_reports():
                             'Üye ID': member_id,
                             'Kullanıcı Adı': record.get('username', ''),
                             'Müşteri Adı': record.get('customer_name', ''),
+                            'Yatırım Adedi': deposit_count,
                             'Yatırım': deposits,
+                            'Çekim Adedi': withdrawal_count,
                             'Çekim': withdrawals,
                             'Net': deposits - withdrawals
                         })
@@ -869,10 +893,14 @@ def show_reports():
                                 'username': record.get('username', ''),
                                 'customer_name': record.get('customer_name', ''),
                                 'deposits': 0,
-                                'withdrawals': 0
+                                'withdrawals': 0,
+                                'deposit_count': 0,
+                                'withdrawal_count': 0
                             }
                         member_summary[member_id]['deposits'] += deposits
                         member_summary[member_id]['withdrawals'] += withdrawals
+                        member_summary[member_id]['deposit_count'] += deposit_count
+                        member_summary[member_id]['withdrawal_count'] += withdrawal_count
         
         if filtered_data:
             total_net = total_deposits - total_withdrawals
@@ -916,8 +944,10 @@ def show_reports():
                     'Üye ID': member_id,
                     'Kullanıcı Adı': data['username'],
                     'Müşteri Adı': data['customer_name'],
-                    'Yatırım': data['deposits'],
-                    'Çekim': data['withdrawals'],
+                    'Yatırım Adedi': data['deposit_count'],
+                    'Yatırım Miktarı': data['deposits'],
+                    'Çekim Adedi': data['withdrawal_count'],
+                    'Çekim Miktarı': data['withdrawals'],
                     'Net': net
                 })
             
@@ -931,8 +961,8 @@ def show_reports():
             
             styled_members = df_members.style.map(highlight_net, subset=['Net'])
             styled_members = styled_members.format({
-                'Yatırım': '{:,.0f} TL',
-                'Çekim': '{:,.0f} TL',
+                'Yatırım Miktarı': '{:,.0f} TL',
+                'Çekim Miktarı': '{:,.0f} TL',
                 'Net': '{:,.0f} TL'
             })
             st.dataframe(styled_members, use_container_width=True)
@@ -974,6 +1004,301 @@ def show_reports():
         else:
             st.warning("Seçilen tarih aralığında veri bulunamadı.")
 
+def show_statistics():
+    """İstatistik sayfası"""
+    st.header("📊 Detaylı İstatistikler")
+    
+    data_processor = DataProcessor()
+    member_manager = MemberManager()
+    
+    # Verileri yükle
+    try:
+        with open(data_processor.daily_data_file, 'r', encoding='utf-8') as f:
+            daily_data = json.load(f)
+    except:
+        daily_data = {}
+    
+    if not daily_data:
+        st.warning("⚠️ Henüz veri bulunmuyor. Önce Excel dosyası yükleyin.")
+        return
+    
+    # Tarih aralığı seçimi
+    st.sidebar.subheader("📅 Tarih Aralığı")
+    
+    available_dates = sorted(daily_data.keys())
+    if available_dates:
+        start_date = st.sidebar.date_input(
+            "Başlangıç Tarihi",
+            value=datetime.strptime(available_dates[0], '%Y-%m-%d').date()
+        )
+        end_date = st.sidebar.date_input(
+            "Bitiş Tarihi", 
+            value=datetime.strptime(available_dates[-1], '%Y-%m-%d').date()
+        )
+    else:
+        st.error("Veri bulunamadı")
+        return
+    
+    # Veri toplama
+    member_stats = {}
+    total_deposits = 0
+    total_withdrawals = 0
+    total_deposit_count = 0
+    total_withdrawal_count = 0
+    
+    for date_str, btag_data in daily_data.items():
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+        
+        if start_date <= date_obj <= end_date:
+            for btag, records in btag_data.items():
+                for record in records:
+                    member_id = str(record.get('member_id', ''))
+                    username = record.get('username', '')
+                    customer_name = record.get('customer_name', '')
+                    deposit_count = record.get('deposit_count', 0)
+                    deposit_amount = record.get('total_deposits', 0)
+                    withdrawal_count = record.get('withdrawal_count', 0)
+                    withdrawal_amount = record.get('total_withdrawals', 0)
+                    
+                    if member_id not in member_stats:
+                        member_stats[member_id] = {
+                            'username': username,
+                            'customer_name': customer_name,
+                            'total_deposits': 0,
+                            'total_withdrawals': 0,
+                            'deposit_count': 0,
+                            'withdrawal_count': 0,
+                            'net_amount': 0,
+                            'days_active': 0
+                        }
+                    
+                    member_stats[member_id]['total_deposits'] += deposit_amount
+                    member_stats[member_id]['total_withdrawals'] += withdrawal_amount
+                    member_stats[member_id]['deposit_count'] += deposit_count
+                    member_stats[member_id]['withdrawal_count'] += withdrawal_count
+                    member_stats[member_id]['days_active'] += 1
+                    
+                    total_deposits += deposit_amount
+                    total_withdrawals += withdrawal_amount
+                    total_deposit_count += deposit_count
+                    total_withdrawal_count += withdrawal_count
+    
+    # Net miktarları hesapla
+    for member_id in member_stats:
+        member_stats[member_id]['net_amount'] = (
+            member_stats[member_id]['total_deposits'] - 
+            member_stats[member_id]['total_withdrawals']
+        )
+    
+    # Genel özet metrikleri
+    st.subheader("📈 Genel Özet")
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("💰 Toplam Yatırım", f"{total_deposits:,.0f} TL")
+        st.metric("🔢 Yatırım Adedi", f"{total_deposit_count:,}")
+    
+    with col2:
+        st.metric("💸 Toplam Çekim", f"{total_withdrawals:,.0f} TL")
+        st.metric("🔢 Çekim Adedi", f"{total_withdrawal_count:,}")
+    
+    with col3:
+        net_total = total_deposits - total_withdrawals
+        st.metric("📊 Net Kar/Zarar", f"{net_total:,.0f} TL")
+        if total_deposit_count > 0:
+            avg_deposit = total_deposits / total_deposit_count
+            st.metric("📊 Ort. Yatırım", f"{avg_deposit:,.0f} TL")
+    
+    with col4:
+        total_members = len(member_stats)
+        st.metric("👥 Aktif Üye", total_members)
+        if total_withdrawal_count > 0:
+            avg_withdrawal = total_withdrawals / total_withdrawal_count
+            st.metric("📊 Ort. Çekim", f"{avg_withdrawal:,.0f} TL")
+    
+    st.markdown("---")
+    
+    # En iyi performans gösteren üyeler
+    st.subheader("🏆 Top Performans")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.write("**💰 En Çok Yatırım Yapan Üyeler**")
+        top_deposits = sorted(member_stats.items(), 
+                            key=lambda x: x[1]['total_deposits'], reverse=True)[:10]
+        
+        top_deposits_data = []
+        for member_id, stats in top_deposits:
+            if stats['total_deposits'] > 0:
+                top_deposits_data.append({
+                    'Sıra': len(top_deposits_data) + 1,
+                    'Kullanıcı Adı': stats['username'],
+                    'Müşteri Adı': stats['customer_name'],
+                    'Yatırım Miktarı': f"{stats['total_deposits']:,.0f} TL",
+                    'Yatırım Adedi': stats['deposit_count']
+                })
+        
+        if top_deposits_data:
+            st.dataframe(pd.DataFrame(top_deposits_data), use_container_width=True)
+        
+        st.write("**🔢 En Sık Yatırım Yapan Üyeler**")
+        top_deposit_count = sorted(member_stats.items(), 
+                                 key=lambda x: x[1]['deposit_count'], reverse=True)[:10]
+        
+        top_count_data = []
+        for member_id, stats in top_deposit_count:
+            if stats['deposit_count'] > 0:
+                top_count_data.append({
+                    'Sıra': len(top_count_data) + 1,
+                    'Kullanıcı Adı': stats['username'],
+                    'Müşteri Adı': stats['customer_name'],
+                    'Yatırım Adedi': stats['deposit_count'],
+                    'Toplam Miktar': f"{stats['total_deposits']:,.0f} TL"
+                })
+        
+        if top_count_data:
+            st.dataframe(pd.DataFrame(top_count_data), use_container_width=True)
+    
+    with col2:
+        st.write("**💸 En Çok Çekim Yapan Üyeler**")
+        top_withdrawals = sorted(member_stats.items(), 
+                               key=lambda x: x[1]['total_withdrawals'], reverse=True)[:10]
+        
+        top_withdrawals_data = []
+        for member_id, stats in top_withdrawals:
+            if stats['total_withdrawals'] > 0:
+                top_withdrawals_data.append({
+                    'Sıra': len(top_withdrawals_data) + 1,
+                    'Kullanıcı Adı': stats['username'],
+                    'Müşteri Adı': stats['customer_name'],
+                    'Çekim Miktarı': f"{stats['total_withdrawals']:,.0f} TL",
+                    'Çekim Adedi': stats['withdrawal_count']
+                })
+        
+        if top_withdrawals_data:
+            st.dataframe(pd.DataFrame(top_withdrawals_data), use_container_width=True)
+        
+        st.write("**📈 En Karlı Üyeler**")
+        top_profitable = sorted(member_stats.items(), 
+                              key=lambda x: x[1]['net_amount'], reverse=True)[:10]
+        
+        top_profit_data = []
+        for member_id, stats in top_profitable:
+            if stats['net_amount'] != 0:
+                top_profit_data.append({
+                    'Sıra': len(top_profit_data) + 1,
+                    'Kullanıcı Adı': stats['username'],
+                    'Müşteri Adı': stats['customer_name'],
+                    'Net Kar': f"{stats['net_amount']:,.0f} TL",
+                    'Yatırım': f"{stats['total_deposits']:,.0f} TL"
+                })
+        
+        if top_profit_data:
+            st.dataframe(pd.DataFrame(top_profit_data), use_container_width=True)
+    
+    st.markdown("---")
+    
+    # Grafik analizler
+    st.subheader("📊 Grafik Analizleri")
+    
+    tab1, tab2, tab3 = st.tabs(["Dağılım Analizi", "Trend Analizi", "Karşılaştırma"])
+    
+    with tab1:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Yatırım miktarı dağılımı
+            deposit_amounts = [stats['total_deposits'] for stats in member_stats.values() if stats['total_deposits'] > 0]
+            if deposit_amounts:
+                fig = px.histogram(x=deposit_amounts, nbins=20, 
+                                 title='Yatırım Miktarı Dağılımı',
+                                 labels={'x': 'Yatırım Miktarı (TL)', 'y': 'Üye Sayısı'})
+                st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            # Çekim miktarı dağılımı
+            withdrawal_amounts = [stats['total_withdrawals'] for stats in member_stats.values() if stats['total_withdrawals'] > 0]
+            if withdrawal_amounts:
+                fig = px.histogram(x=withdrawal_amounts, nbins=20,
+                                 title='Çekim Miktarı Dağılımı',
+                                 labels={'x': 'Çekim Miktarı (TL)', 'y': 'Üye Sayısı'})
+                st.plotly_chart(fig, use_container_width=True)
+    
+    with tab2:
+        # Günlük trend analizi
+        daily_summary = {}
+        for date_str, btag_data in daily_data.items():
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+            
+            if start_date <= date_obj <= end_date:
+                daily_deposits = 0
+                daily_withdrawals = 0
+                daily_dep_count = 0
+                daily_with_count = 0
+                
+                for btag, records in btag_data.items():
+                    for record in records:
+                        daily_deposits += record.get('total_deposits', 0)
+                        daily_withdrawals += record.get('total_withdrawals', 0)
+                        daily_dep_count += record.get('deposit_count', 0)
+                        daily_with_count += record.get('withdrawal_count', 0)
+                
+                daily_summary[date_str] = {
+                    'Yatırım Miktarı': daily_deposits,
+                    'Çekim Miktarı': daily_withdrawals,
+                    'Yatırım Adedi': daily_dep_count,
+                    'Çekim Adedi': daily_with_count
+                }
+        
+        if daily_summary:
+            df_trend = pd.DataFrame(daily_summary).T
+            df_trend.index = pd.to_datetime(df_trend.index)
+            
+            # Miktar trendi
+            fig = px.line(df_trend, y=['Yatırım Miktarı', 'Çekim Miktarı'],
+                         title='Günlük Miktar Trendi',
+                         color_discrete_map={'Yatırım Miktarı': 'green', 'Çekim Miktarı': 'red'})
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Adet trendi
+            fig = px.line(df_trend, y=['Yatırım Adedi', 'Çekim Adedi'],
+                         title='Günlük İşlem Adedi Trendi',
+                         color_discrete_map={'Yatırım Adedi': 'blue', 'Çekim Adedi': 'orange'})
+            st.plotly_chart(fig, use_container_width=True)
+    
+    with tab3:
+        # Yatırım vs Çekim karşılaştırması
+        member_comparison = []
+        for member_id, stats in member_stats.items():
+            if stats['total_deposits'] > 0 or stats['total_withdrawals'] > 0:
+                member_comparison.append({
+                    'Kullanıcı Adı': stats['username'],
+                    'Yatırım Miktarı': stats['total_deposits'],
+                    'Çekim Miktarı': stats['total_withdrawals'],
+                    'Yatırım Adedi': stats['deposit_count'],
+                    'Çekim Adedi': stats['withdrawal_count']
+                })
+        
+        if member_comparison:
+            df_comparison = pd.DataFrame(member_comparison)
+            
+            # Miktar karşılaştırması
+            fig = px.scatter(df_comparison, x='Yatırım Miktarı', y='Çekim Miktarı',
+                           hover_data=['Kullanıcı Adı'],
+                           title='Yatırım vs Çekim Miktarı Karşılaştırması')
+            # Eşit çizgi ekle
+            max_val = max(df_comparison['Yatırım Miktarı'].max(), df_comparison['Çekim Miktarı'].max())
+            fig.add_shape(type="line", x0=0, y0=0, x1=max_val, y1=max_val, 
+                         line=dict(color="red", dash="dash"))
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Adet karşılaştırması
+            fig = px.scatter(df_comparison, x='Yatırım Adedi', y='Çekim Adedi',
+                           hover_data=['Kullanıcı Adı'],
+                           title='Yatırım vs Çekim Adedi Karşılaştırması')
+            st.plotly_chart(fig, use_container_width=True)
+
 def main():
     """Ana uygulama fonksiyonu"""
     st.title("📊 BTag Affiliate Takip Sistemi")
@@ -983,7 +1308,7 @@ def main():
     st.sidebar.title("📋 Menü")
     menu = st.sidebar.selectbox(
         "İşlem Seçin",
-        ["Ana Sayfa", "Excel Yükleme", "Üye Yönetimi", "Raporlar", "Ayarlar"]
+        ["Ana Sayfa", "Excel Yükleme", "Üye Yönetimi", "Raporlar", "İstatistikler", "Ayarlar"]
     )
     
     # Ayarlar modalını göster
@@ -997,6 +1322,8 @@ def main():
         show_member_management()
     elif menu == "Raporlar":
         show_reports()
+    elif menu == "İstatistikler":
+        show_statistics()
     elif menu == "Ayarlar":
         st.header("⚙️ Ayarlar")
         st.info("Ayarlar sidebar'da bulunmaktadır.")
