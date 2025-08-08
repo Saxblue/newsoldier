@@ -11,7 +11,7 @@ from io import BytesIO
 
 # Streamlit sayfa konfigürasyonu
 st.set_page_config(
-    page_title="BTag Affiliate Takip Sistemi",
+    page_title="İstanbul Affiliate Rapor Merkezi",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -1305,7 +1305,7 @@ def show_statistics():
 
 def main():
     """Ana uygulama fonksiyonu"""
-    st.title("📊 BTag Affiliate Takip Sistemi")
+    st.title("📊 İstanbul Affiliate Rapor Merkezi")
     st.markdown("---")
     
     # Üst sekmeler
