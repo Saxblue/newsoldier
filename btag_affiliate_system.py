@@ -394,34 +394,35 @@ class MemberManager:
             st.error(f"Üye durumu değiştirme hatası: {e}")
             return False
 
-def show_settings_modal():
-    """Ayarlar modalını göster"""
+def show_settings():
+    """Ayarlar sayfası"""
+    st.header("⚙️ API Ayarları")
+    
     token_manager = TokenManager()
     token_data = token_manager.load_token()
     
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("⚙️ API Ayarları")
+    col1, col2 = st.columns([1, 1])
     
-    # Mevcut token göster
-    with st.sidebar.expander("Mevcut Token Bilgileri"):
+    with col1:
+        st.subheader("📋 Mevcut Token Bilgileri")
         st.code(token_data.get('token', 'Token bulunamadı'), language='text')
         st.text(f"API URL: {token_data.get('api_url', '')}")
     
-    # Yeni token girişi
-    st.sidebar.markdown("**Yeni Token Bilgileri:**")
-    new_token = st.sidebar.text_input("Token", value=token_data.get('token', ''), type='password')
-    new_api_url = st.sidebar.text_input("API URL", value=token_data.get('api_url', ''))
-    
-    if st.sidebar.button("💾 Token Kaydet", type='primary'):
-        if new_token and new_api_url:
-            success = token_manager.save_token(new_token, new_api_url)
-            if success:
-                st.sidebar.success("✅ Token başarıyla kaydedildi!")
-                st.rerun()
+    with col2:
+        st.subheader("🔧 Token Güncelleme")
+        new_token = st.text_input("Token", value=token_data.get('token', ''), type='password')
+        new_api_url = st.text_input("API URL", value=token_data.get('api_url', ''))
+        
+        if st.button("💾 Token Kaydet", type='primary'):
+            if new_token and new_api_url:
+                success = token_manager.save_token(new_token, new_api_url)
+                if success:
+                    st.success("✅ Token başarıyla kaydedildi!")
+                    st.rerun()
+                else:
+                    st.error("❌ Token kaydetme hatası!")
             else:
-                st.sidebar.error("❌ Token kaydetme hatası!")
-        else:
-            st.sidebar.warning("⚠️ Tüm alanları doldurun!")
+                st.warning("⚠️ Tüm alanları doldurun!")
 
 def show_dashboard():
     """Ana sayfa göster"""
@@ -1023,18 +1024,21 @@ def show_statistics():
         return
     
     # Tarih aralığı seçimi
-    st.sidebar.subheader("📅 Tarih Aralığı")
+    st.subheader("📅 Tarih Aralığı Seçin")
+    col1, col2 = st.columns(2)
     
     available_dates = sorted(daily_data.keys())
     if available_dates:
-        start_date = st.sidebar.date_input(
-            "Başlangıç Tarihi",
-            value=datetime.strptime(available_dates[0], '%Y-%m-%d').date()
-        )
-        end_date = st.sidebar.date_input(
-            "Bitiş Tarihi", 
-            value=datetime.strptime(available_dates[-1], '%Y-%m-%d').date()
-        )
+        with col1:
+            start_date = st.date_input(
+                "Başlangıç Tarihi",
+                value=datetime.strptime(available_dates[0], '%Y-%m-%d').date()
+            )
+        with col2:
+            end_date = st.date_input(
+                "Bitiş Tarihi", 
+                value=datetime.strptime(available_dates[-1], '%Y-%m-%d').date()
+            )
     else:
         st.error("Veri bulunamadı")
         return
@@ -1304,29 +1308,33 @@ def main():
     st.title("📊 BTag Affiliate Takip Sistemi")
     st.markdown("---")
     
-    # Sidebar - Ana menü
-    st.sidebar.title("📋 Menü")
-    menu = st.sidebar.selectbox(
-        "İşlem Seçin",
-        ["Ana Sayfa", "Excel Yükleme", "Üye Yönetimi", "Raporlar", "İstatistikler", "Ayarlar"]
-    )
+    # Üst sekmeler
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+        "🏠 Ana Sayfa", 
+        "📤 Excel Yükleme", 
+        "👥 Üye Yönetimi", 
+        "📋 Raporlar", 
+        "📊 İstatistikler", 
+        "⚙️ Ayarlar"
+    ])
     
-    # Ayarlar modalını göster
-    show_settings_modal()
-    
-    if menu == "Ana Sayfa":
+    with tab1:
         show_dashboard()
-    elif menu == "Excel Yükleme":
+    
+    with tab2:
         show_excel_upload()
-    elif menu == "Üye Yönetimi":
+    
+    with tab3:
         show_member_management()
-    elif menu == "Raporlar":
+    
+    with tab4:
         show_reports()
-    elif menu == "İstatistikler":
+    
+    with tab5:
         show_statistics()
-    elif menu == "Ayarlar":
-        st.header("⚙️ Ayarlar")
-        st.info("Ayarlar sidebar'da bulunmaktadır.")
+    
+    with tab6:
+        show_settings()
 
 if __name__ == "__main__":
     main()
