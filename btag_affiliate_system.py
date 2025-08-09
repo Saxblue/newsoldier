@@ -11,7 +11,7 @@ from io import BytesIO
 
 # Streamlit sayfa konfigürasyonu
 st.set_page_config(
-    page_title="İstanbul Affiliate Rapor Merkezi",
+    page_title="BTag Affiliate Takip Sistemi",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -394,35 +394,34 @@ class MemberManager:
             st.error(f"Üye durumu değiştirme hatası: {e}")
             return False
 
-def show_settings():
-    """Ayarlar sayfası"""
-    st.header("⚙️ API Ayarları")
-    
+def show_settings_modal():
+    """Ayarlar modalını göster"""
     token_manager = TokenManager()
     token_data = token_manager.load_token()
     
-    col1, col2 = st.columns([1, 1])
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("⚙️ API Ayarları")
     
-    with col1:
-        st.subheader("📋 Mevcut Token Bilgileri")
+    # Mevcut token göster
+    with st.sidebar.expander("Mevcut Token Bilgileri"):
         st.code(token_data.get('token', 'Token bulunamadı'), language='text')
         st.text(f"API URL: {token_data.get('api_url', '')}")
     
-    with col2:
-        st.subheader("🔧 Token Güncelleme")
-        new_token = st.text_input("Token", value=token_data.get('token', ''), type='password')
-        new_api_url = st.text_input("API URL", value=token_data.get('api_url', ''))
-        
-        if st.button("💾 Token Kaydet", type='primary'):
-            if new_token and new_api_url:
-                success = token_manager.save_token(new_token, new_api_url)
-                if success:
-                    st.success("✅ Token başarıyla kaydedildi!")
-                    st.rerun()
-                else:
-                    st.error("❌ Token kaydetme hatası!")
+    # Yeni token girişi
+    st.sidebar.markdown("**Yeni Token Bilgileri:**")
+    new_token = st.sidebar.text_input("Token", value=token_data.get('token', ''), type='password')
+    new_api_url = st.sidebar.text_input("API URL", value=token_data.get('api_url', ''))
+    
+    if st.sidebar.button("💾 Token Kaydet", type='primary'):
+        if new_token and new_api_url:
+            success = token_manager.save_token(new_token, new_api_url)
+            if success:
+                st.sidebar.success("✅ Token başarıyla kaydedildi!")
+                st.rerun()
             else:
-                st.warning("⚠️ Tüm alanları doldurun!")
+                st.sidebar.error("❌ Token kaydetme hatası!")
+        else:
+            st.sidebar.warning("⚠️ Tüm alanları doldurun!")
 
 def show_dashboard():
     """Ana sayfa göster"""
@@ -1024,21 +1023,18 @@ def show_statistics():
         return
     
     # Tarih aralığı seçimi
-    st.subheader("📅 Tarih Aralığı Seçin")
-    col1, col2 = st.columns(2)
+    st.sidebar.subheader("📅 Tarih Aralığı")
     
     available_dates = sorted(daily_data.keys())
     if available_dates:
-        with col1:
-            start_date = st.date_input(
-                "Başlangıç Tarihi",
-                value=datetime.strptime(available_dates[0], '%Y-%m-%d').date()
-            )
-        with col2:
-            end_date = st.date_input(
-                "Bitiş Tarihi", 
-                value=datetime.strptime(available_dates[-1], '%Y-%m-%d').date()
-            )
+        start_date = st.sidebar.date_input(
+            "Başlangıç Tarihi",
+            value=datetime.strptime(available_dates[0], '%Y-%m-%d').date()
+        )
+        end_date = st.sidebar.date_input(
+            "Bitiş Tarihi", 
+            value=datetime.strptime(available_dates[-1], '%Y-%m-%d').date()
+        )
     else:
         st.error("Veri bulunamadı")
         return
@@ -1305,36 +1301,32 @@ def show_statistics():
 
 def main():
     """Ana uygulama fonksiyonu"""
-    st.title("📊 İstanbul Affiliate Rapor Merkezi")
+    st.title("📊 BTag Affiliate Takip Sistemi")
     st.markdown("---")
     
-    # Üst sekmeler
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-        "🏠 Ana Sayfa", 
-        "📤 Excel Yükleme", 
-        "👥 Üye Yönetimi", 
-        "📋 Raporlar", 
-        "📊 İstatistikler", 
-        "⚙️ Ayarlar"
-    ])
+    # Sidebar - Ana menü
+    st.sidebar.title("📋 Menü")
+    menu = st.sidebar.selectbox(
+        "İşlem Seçin",
+        ["Ana Sayfa", "Excel Yükleme", "Üye Yönetimi", "Raporlar", "İstatistikler", "Ayarlar"]
+    )
     
-    with tab1:
+    # Ayarlar modalını göster
+    show_settings_modal()
+    
+    if menu == "Ana Sayfa":
         show_dashboard()
-    
-    with tab2:
+    elif menu == "Excel Yükleme":
         show_excel_upload()
-    
-    with tab3:
+    elif menu == "Üye Yönetimi":
         show_member_management()
-    
-    with tab4:
+    elif menu == "Raporlar":
         show_reports()
-    
-    with tab5:
+    elif menu == "İstatistikler":
         show_statistics()
-    
-    with tab6:
-        show_settings()
+    elif menu == "Ayarlar":
+        st.header("⚙️ Ayarlar")
+        st.info("Ayarlar sidebar'da bulunmaktadır.")
 
 if __name__ == "__main__":
     main()
