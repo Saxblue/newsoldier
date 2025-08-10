@@ -518,7 +518,6 @@ def show_dashboard():
     """Ana sayfa göster"""
     st.header("🏠 Ana Sayfa")
     
-{{ ... }}
     member_manager = MemberManager()
     data_processor = DataProcessor()
     
