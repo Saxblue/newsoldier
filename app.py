@@ -560,9 +560,9 @@ class MemberManager:
             return []
     
     def get_active_members(self):
-        """Aktif üyeleri getir"""
+        """Aktif üyeleri getir (7 günden az yatırım yapmamış)"""
         all_members = self.get_all_members()
-        return [member for member in all_members if member.get('is_active', True)]
+        return [member for member in all_members if member.get('days_without_deposit', 999) <= 7]
     
     def save_members(self, members):
         """Üye listesini kaydet"""
@@ -843,10 +843,10 @@ class Visualization:
                        [{"type": "histogram"}, {"type": "bar"}]]
             )
             
-            # 1. Durum dağılımı (Pie chart)
+            # 1. Durum dağılımı (Pie chart) - 7 günden fazla yatırım yapmamış = Pasif
             status_counts = {}
             for member in members:
-                status = 'Aktif' if member.get('is_active', True) else 'Pasif'
+                status = 'Aktif' if member.get('days_without_deposit', 999) <= 7 else 'Pasif'
                 status_counts[status] = status_counts.get(status, 0) + 1
             
             fig.add_trace(
@@ -1266,9 +1266,9 @@ def show_member_management():
             filtered_members = members.copy()
             
             if status_filter == "Aktif":
-                filtered_members = [m for m in filtered_members if m.get('is_active', True)]
+                filtered_members = [m for m in filtered_members if m.get('days_without_deposit', 999) <= 7]
             elif status_filter == "Pasif":
-                filtered_members = [m for m in filtered_members if not m.get('is_active', True)]
+                filtered_members = [m for m in filtered_members if m.get('days_without_deposit', 999) > 7]
             
             if days_filter == "Son 7 gün":
                 filtered_members = [m for m in filtered_members if m.get('days_without_deposit', 999) <= 7]
@@ -1297,7 +1297,7 @@ def show_member_management():
                         'Bakiye': Utils.format_currency(member.get('balance', 0)),
                         'Son Yatırım': Utils.format_date(member.get('last_deposit_date')),
                         'Yatırımsız Gün': member.get('days_without_deposit', 999),
-                        'Durum': '✅ Aktif' if member.get('is_active', True) else '❌ Pasif',
+                        'Durum': '✅ Aktif' if member.get('days_without_deposit', 999) <= 7 else '❌ Pasif',
                         'Oluşturma Tarihi': Utils.format_date(member.get('created_at'))
                     })
                 
