@@ -8,6 +8,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from io import BytesIO
+from github_sync import GitHubSync
 
 # Streamlit sayfa konfigürasyonu
 st.set_page_config(
@@ -81,6 +82,7 @@ class DataProcessor:
     def __init__(self):
         self.daily_data_file = "daily_data.json"
         self.members_file = "members.json"
+        self.github_sync = GitHubSync()
         self.ensure_data_files()
     
     def ensure_data_files(self):
@@ -131,7 +133,7 @@ class DataProcessor:
         return df_processed[required_columns]
     
     def save_daily_data(self, processed_df, btag, date):
-        """Günlük veriyi kaydet"""
+        """Günlük veriyi kaydet ve GitHub'a senkronize et"""
         try:
             with open(self.daily_data_file, 'r', encoding='utf-8') as f:
                 daily_data = json.load(f)
@@ -146,6 +148,13 @@ class DataProcessor:
             with open(self.daily_data_file, 'w', encoding='utf-8') as f:
                 json.dump(daily_data, f, ensure_ascii=False, indent=2)
             
+            # Otomatik GitHub senkronizasyonu
+            if self.github_sync.sync_enabled:
+                with st.spinner("GitHub'a senkronize ediliyor..."):
+                    sync_success = self.github_sync.sync_json_file(self.daily_data_file)
+                    if sync_success:
+                        st.success("🔄 Veriler GitHub'a otomatik yüklendi!")
+            
             return True
         except Exception as e:
             st.error(f"Veri kaydetme hatası: {e}")
@@ -157,6 +166,7 @@ class MemberManager:
         self.members_file = "members.json"
         self.ensure_members_file()
         self.token_manager = TokenManager()
+        self.github_sync = GitHubSync()
     
     def ensure_members_file(self):
         """Üye dosyasını oluştur"""
@@ -396,38 +406,119 @@ class MemberManager:
 
 def show_settings():
     """Ayarlar sayfası"""
-    st.header("⚙️ API Ayarları")
+    st.header("⚙️ Ayarlar")
     
-    token_manager = TokenManager()
-    token_data = token_manager.load_token()
+    # API Ayarları Sekmesi
+    tab1, tab2 = st.tabs(["🔑 API Ayarları", "🔄 GitHub Senkronizasyon"])
     
-    col1, col2 = st.columns([1, 1])
-    
-    with col1:
-        st.subheader("📋 Mevcut Token Bilgileri")
-        st.code(token_data.get('token', 'Token bulunamadı'), language='text')
-        st.text(f"API URL: {token_data.get('api_url', '')}")
-    
-    with col2:
-        st.subheader("🔧 Token Güncelleme")
-        new_token = st.text_input("Token", value=token_data.get('token', ''), type='password')
-        new_api_url = st.text_input("API URL", value=token_data.get('api_url', ''))
+    with tab1:
+        st.subheader("📋 API Token Ayarları")
         
-        if st.button("💾 Token Kaydet", type='primary'):
-            if new_token and new_api_url:
-                success = token_manager.save_token(new_token, new_api_url)
-                if success:
-                    st.success("✅ Token başarıyla kaydedildi!")
-                    st.rerun()
+        token_manager = TokenManager()
+        token_data = token_manager.load_token()
+        
+        col1, col2 = st.columns([1, 1])
+        
+        with col1:
+            st.subheader("📋 Mevcut Token Bilgileri")
+            st.code(token_data.get('token', 'Token bulunamadı'), language='text')
+            st.text(f"API URL: {token_data.get('api_url', '')}")
+        
+        with col2:
+            st.subheader("🔧 Token Güncelleme")
+            new_token = st.text_input("Token", value=token_data.get('token', ''), type='password')
+            new_api_url = st.text_input("API URL", value=token_data.get('api_url', ''))
+            
+            if st.button("💾 Token Kaydet", type='primary'):
+                if new_token and new_api_url:
+                    success = token_manager.save_token(new_token, new_api_url)
+                    if success:
+                        st.success("✅ Token başarıyla kaydedildi!")
+                        st.rerun()
+                    else:
+                        st.error("❌ Token kaydetme hatası!")
                 else:
-                    st.error("❌ Token kaydetme hatası!")
-            else:
-                st.warning("⚠️ Tüm alanları doldurun!")
+                    st.error("❌ Lütfen tüm alanları doldurun!")
+    
+    with tab2:
+        st.subheader("🔄 GitHub Otomatik Senkronizasyon")
+        
+        # GitHub Sync nesnesi oluştur
+        github_sync = GitHubSync()
+        
+        # Repository bilgilerini göster
+        repo_info = github_sync.get_repo_info()
+        if repo_info:
+            st.success("✅ GitHub bağlantısı başarılı!")
+            
+            col1, col2 = st.columns([1, 1])
+            
+            with col1:
+                st.info(f"""
+                **📁 Repository:** {repo_info['full_name']}
+                **🔗 URL:** {repo_info['url']}
+                **📅 Son Push:** {repo_info['last_push']}
+                **📊 Toplam Commit:** {repo_info['commits']}
+                """)
+            
+            with col2:
+                st.subheader("🚀 Senkronizasyon İşlemleri")
+                
+                if st.button("🔄 Tüm Dosyaları Senkronize Et", type='primary'):
+                    github_sync.sync_all_files()
+                
+                st.markdown("---")
+                
+                # Tek tek dosya senkronizasyonu
+                st.subheader("📁 Tek Dosya Senkronizasyonu")
+                
+                col_btn1, col_btn2 = st.columns(2)
+                
+                with col_btn1:
+                    if st.button("📄 btag.py"):
+                        github_sync.sync_python_file("btag.py", "btag_affiliate_system.py")
+                    
+                    if st.button("📊 daily_data.json"):
+                        github_sync.sync_json_file("daily_data.json")
+                
+                with col_btn2:
+                    if st.button("👥 members.json"):
+                        github_sync.sync_json_file("members.json")
+                    
+                    if st.button("🔑 token.json"):
+                        github_sync.sync_json_file("token.json")
+        
+        else:
+            st.error("❌ GitHub bağlantısı başarısız!")
+            st.info("""
+            **GitHub Senkronizasyon Özellikleri:**
+            - Otomatik dosya yükleme
+            - Veri dosyalarını senkronize etme
+            - Streamlit Cloud otomatik güncelleme
+            - Repository bilgilerini görüntüleme
+            """)
+        
+        st.markdown("---")
+        st.subheader("ℹ️ Bilgi")
+        st.info("""
+        **GitHub Senkronizasyon Nasıl Çalışır:**
+        1. 🔄 Yerel değişikliklerinizi GitHub'a otomatik yükler
+        2. 🌐 Streamlit Cloud otomatik olarak güncellenir
+        3. 📊 Veri dosyaları (JSON) senkronize edilir
+        4. 💻 Kod değişiklikleri anında yansır
+        
+        **Senkronize Edilen Dosyalar:**
+        - `btag.py` → `btag_affiliate_system.py`
+        - `daily_data.json`
+        - `members.json` 
+        - `token.json`
+        """)
 
 def show_dashboard():
     """Ana sayfa göster"""
     st.header("🏠 Ana Sayfa")
     
+{{ ... }}
     member_manager = MemberManager()
     data_processor = DataProcessor()
     
