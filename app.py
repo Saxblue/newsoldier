@@ -390,8 +390,8 @@ class DataProcessor:
             with open(self.daily_data_file, 'w', encoding='utf-8') as f:
                 json.dump({}, f)
     
-    def process_excel_data(self, df):
-        """Excel verisini işle"""
+    def process_excel_data(self, df, btag_filter=None):
+        """Excel verisini işle ve isteğe bağlı BTag filtresi uygula"""
         try:
             # Sütun haritalama - Türkçe ve İngilizce sütun adlarını destekle
             column_mapping = {
@@ -411,7 +411,11 @@ class DataProcessor:
                 'Withdrawal Count': 'withdrawal_count',
                 'Para Çekme Miktarı': 'total_withdrawals',
                 'Withdrawals': 'total_withdrawals',
-                'Total Withdrawals': 'total_withdrawals'
+                'Total Withdrawals': 'total_withdrawals',
+                'BTag': 'btag',
+                'B Tag': 'btag',
+                'Tag': 'btag',
+                'Btag': 'btag'
             }
             
             df_processed = df.copy()
@@ -421,6 +425,21 @@ class DataProcessor:
             for old_col, new_col in column_mapping.items():
                 if old_col in df_processed.columns:
                     df_processed = df_processed.rename(columns={old_col: new_col})
+            
+            # BTag filtreleme (eğer belirtildiyse)
+            if btag_filter:
+                if 'btag' in df_processed.columns:
+                    original_count = len(df_processed)
+                    df_processed = df_processed[df_processed['btag'].astype(str).str.contains(str(btag_filter), case=False, na=False)]
+                    filtered_count = len(df_processed)
+                    st.info(f"🎯 BTag '{btag_filter}' filtresi uygulandı: {original_count} → {filtered_count} kayıt")
+                    
+                    if filtered_count == 0:
+                        st.warning(f"⚠️ BTag '{btag_filter}' ile eşleşen kayıt bulunamadı!")
+                        return None
+                else:
+                    st.warning(f"⚠️ Excel dosyasında 'BTag' sütunu bulunamadı. Sadece '{btag_filter}' BTag'ına ait üyeler filtrelemek için Excel'de BTag sütunu olmalı.")
+                    st.info("💡 BTag sütunu olmadan tüm veriler işlenecek. BTag'a özel filtreleme için Excel'e BTag sütunu ekleyin.")
             
             # Gerekli sütunlar
             required_columns = [
@@ -1344,6 +1363,26 @@ def show_reports():
     with tab2:
         st.subheader("📁 Excel Veri Yükleme")
         
+        # Kullanım kılavuzu
+        with st.expander("📖 BTag Filtreleme Kılavuzu"):
+            st.markdown("""
+            **Excel'de BTag Filtreleme Nasıl Çalışır:**
+            
+            1. **BTag Sütunu Var İse:** 
+               - Excel'de 'BTag', 'B Tag', 'Tag' veya 'Btag' adında sütun olmalı
+               - Sistem sadece belirtilen BTag'a ait üyeleri işleyecek
+               - Örnek: BTag sütununda 'ABC123' değeri olan satırlar
+            
+            2. **BTag Sütunu Yok İse:**
+               - Tüm Excel verileri işlenir (filtreleme yapılmaz)
+               - Uyarı mesajı gösterilir
+            
+            **Önerilen Excel Formatı:**
+            | ID | Kullanıcı Adı | Müşteri Adı | BTag | Yatırımlar | Para Çekme |
+            |---|---|---|---|---|---|
+            | 12345 | user1 | Ali Veli | ABC123 | 1000 | 500 |
+            """)
+        
         # BTag ID girişi
         btag_id = st.text_input("BTag ID", placeholder="Örn: 2424878")
         
@@ -1377,10 +1416,11 @@ def show_reports():
                 
                 with col1:
                     if st.button("💾 Veriyi İşle ve Kaydet", use_container_width=True):
-                        processed_df = data_processor.process_excel_data(df)
+                        # BTag filtresi ile veriyi işle
+                        processed_df = data_processor.process_excel_data(df, btag_filter=btag_id)
                         
                         if processed_df is not None:
-                            # Yeni üyeleri kontrol et
+                            # Yeni üyeleri kontrol et (sadece bu BTag'a ait olanlar)
                             existing_members = st.session_state.member_manager.get_all_members()
                             existing_ids = set(m.get('member_id', '') for m in existing_members)
                             new_member_ids = []
@@ -1392,15 +1432,15 @@ def show_reports():
                             
                             # Eğer yeni üyeler varsa kullanıcıya sor
                             if new_member_ids:
-                                st.warning(f"⚠️ Excel'de {len(new_member_ids)} yeni üye bulundu!")
+                                st.warning(f"⚠️ BTag '{btag_id}' için Excel'de {len(new_member_ids)} yeni üye bulundu!")
                                 st.write("**Yeni üyeler:**", ", ".join(new_member_ids[:10]))
                                 if len(new_member_ids) > 10:
                                     st.write(f"...ve {len(new_member_ids) - 10} üye daha")
                                 
                                 add_new_members = st.checkbox(
-                                    f"Bu {len(new_member_ids)} yeni üyeyi üye listesine ekle",
+                                    f"Bu {len(new_member_ids)} yeni üyeyi '{btag_id}' BTag'ı için sisteme ekle",
                                     value=True,
-                                    help="Excel'deki yeni üyeleri otomatik olarak sisteme ekler"
+                                    help=f"Excel'deki {btag_id} BTag'ına ait yeni üyeleri sisteme ekler"
                                 )
                                 
                                 if st.button("✅ Onayla ve Kaydet", type="primary"):
@@ -1454,10 +1494,11 @@ def show_reports():
                 
                 with col2:
                     if st.button("🔍 Sadece Veri Analizi", use_container_width=True):
-                        processed_df = data_processor.process_excel_data(df)
+                        # BTag filtresi ile veriyi analiz et
+                        processed_df = data_processor.process_excel_data(df, btag_filter=btag_id)
                         
                         if processed_df is not None:
-                            # Yeni üyeleri kontrol et
+                            # Yeni üyeleri kontrol et (sadece bu BTag'a ait olanlar)
                             existing_members = st.session_state.member_manager.get_all_members()
                             existing_ids = set(m.get('member_id', '') for m in existing_members)
                             new_member_ids = []
@@ -1469,7 +1510,7 @@ def show_reports():
                             
                             # Yeni üye bilgisi göster
                             if new_member_ids:
-                                st.info(f"ℹ️ Excel'de {len(new_member_ids)} yeni üye tespit edildi.")
+                                st.info(f"ℹ️ BTag '{btag_id}' için Excel'de {len(new_member_ids)} yeni üye tespit edildi.")
                             
                             st.success("✅ Veri analizi tamamlandı!")
                             
