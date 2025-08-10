@@ -111,16 +111,37 @@ class GitHubManager:
         try:
             # Repository URL'den owner ve name çıkar
             if 'github.com' in repo_url:
-                parts = repo_url.replace('https://github.com/', '').replace('.git', '').split('/')
+                parts = repo_url.replace('https://github.com/', '').replace('.git', '').strip('/').split('/')
                 if len(parts) >= 2:
                     self.repo_owner = parts[0]
                     self.repo_name = parts[1]
                     
+                    st.info(f"🔍 Repository: {self.repo_owner}/{self.repo_name}")
+                    
+                    # Token kontrolü
+                    github_token = self.token_manager.get_github_token()
+                    if not github_token:
+                        st.error("❌ GitHub token bulunamadı!")
+                        return False
+                    
+                    # Token formatını kontrol et
+                    if not (github_token.startswith('github_pat_') or github_token.startswith('ghp_')):
+                        st.warning("⚠️ Token formatı şüpheli. GitHub Personal Access Token'ı kontrol edin.")
+                    
+                    st.info(f"🔑 Token uzunluğu: {len(github_token)} karakter")
+                    
                     # Test bağlantısı
-                    if self.test_connection():
+                    test_result = self.test_connection_detailed()
+                    if test_result['success']:
                         self.connected = True
+                        st.success(f"✅ Başarıyla bağlandı: {self.repo_owner}/{self.repo_name}")
                         return True
-            return False
+                    else:
+                        st.error(f"❌ {test_result['error']}")
+                        return False
+            else:
+                st.error("❌ Geçersiz GitHub URL formatı!")
+                return False
         except Exception as e:
             st.error(f"GitHub bağlantı hatası: {str(e)}")
             return False
@@ -142,6 +163,43 @@ class GitHubManager:
             return response.status_code == 200
         except Exception:
             return False
+    
+    def test_connection_detailed(self):
+        """Detaylı GitHub bağlantı testi"""
+        try:
+            github_token = self.token_manager.get_github_token()
+            if not github_token:
+                return {'success': False, 'error': 'GitHub token bulunamadı'}
+            
+            if not self.repo_owner or not self.repo_name:
+                return {'success': False, 'error': 'Repository bilgileri eksik'}
+            
+            url = f"https://api.github.com/repos/{self.repo_owner}/{self.repo_name}"
+            headers = {
+                'Authorization': f'token {github_token}',
+                'Accept': 'application/vnd.github.v3+json',
+                'User-Agent': 'BTag-Affiliate-System'
+            }
+            
+            response = requests.get(url, headers=headers, timeout=15)
+            
+            if response.status_code == 200:
+                return {'success': True, 'error': None}
+            elif response.status_code == 401:
+                return {'success': False, 'error': 'Token geçersiz veya süresi dolmuş'}
+            elif response.status_code == 403:
+                return {'success': False, 'error': 'Token yetkisi yetersiz'}
+            elif response.status_code == 404:
+                return {'success': False, 'error': 'Repository bulunamadı veya erişim izni yok'}
+            else:
+                return {'success': False, 'error': f'HTTP {response.status_code}: {response.text[:100]}'}
+                
+        except requests.exceptions.Timeout:
+            return {'success': False, 'error': 'Bağlantı zaman aşımı'}
+        except requests.exceptions.ConnectionError:
+            return {'success': False, 'error': 'İnternet bağlantısı hatası'}
+        except Exception as e:
+            return {'success': False, 'error': f'Beklenmeyen hata: {str(e)}'}
     
     def sync_file(self, file_path):
         """Dosyayı GitHub'a sync et"""
@@ -1492,9 +1550,7 @@ def show_reports():
                 if st.button("📥 Üye Listesi İndir (Excel)"):
                     # Excel dosyası oluştur
                     output = io.BytesIO()
-                    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                        df_export.to_excel(writer, sheet_name='Üye Listesi', index=False)
-                    
+                    df_export.to_excel(output, engine='openpyxl', sheet_name='Üye Listesi', index=False)
                     excel_data = output.getvalue()
                     
                     st.download_button(
@@ -1582,8 +1638,8 @@ def show_settings():
         current_api_token = token_manager.get_api_token()
         current_github_token = token_manager.get_github_token()
         
-        st.write("**Mevcut API Token:**", Utils.mask_sensitive_info(current_api_token) if current_api_token else "Henüz ayarlanmamış")
-        st.write("**Mevcut GitHub Token:**", Utils.mask_sensitive_info(current_github_token) if current_github_token else "Henüz ayarlanmamış")
+        st.write("**Mevcut API Token:**", current_api_token[:10] + "..." if current_api_token else "Henüz ayarlanmamış")
+        st.write("**Mevcut GitHub Token:**", current_github_token[:15] + "..." if current_github_token else "Henüz ayarlanmamış")
         
         # Token güncelleme
         with st.form("token_update_form"):
