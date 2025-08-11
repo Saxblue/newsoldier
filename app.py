@@ -1,17 +1,25 @@
 import streamlit as st
+import pandas as pd
 import json
 import os
 import requests
-import pandas as pd
+from datetime import datetime, timedelta
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from datetime import datetime, timedelta
-import io
-import base64
-import time
+from io import BytesIO
+# GitHub sync'i opsiyonel olarak import et
+try:
+    from github_sync import GitHubSync
+    GITHUB_SYNC_AVAILABLE = True
+except ImportError:
+    GITHUB_SYNC_AVAILABLE = False
+    class GitHubSync:
+        """Dummy GitHub sync class when not available"""
+        def __init__(self):
+            self.sync_enabled = False
 
-# Sayfa konfigürasyonu
+# Streamlit sayfa konfigürasyonu
 st.set_page_config(
     page_title="BTag Affiliate Takip Sistemi",
     page_icon="📊",
@@ -19,12 +27,28 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# =============================================================================
-# TOKEN MANAGER CLASS
-# =============================================================================
+# CSS stil eklemeleri
+st.markdown("""
+<style>
+.settings-button {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 999;
+    background-color: #f0f2f6;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+.settings-button:hover {
+    background-color: #e0e0e0;
+}
+</style>
+""", unsafe_allow_html=True)
+
 class TokenManager:
     """Token yönetimi için sınıf"""
-    
     def __init__(self):
         self.token_file = "token.json"
         self.ensure_token_file()
@@ -33,355 +57,41 @@ class TokenManager:
         """Token dosyasının varlığını kontrol et"""
         if not os.path.exists(self.token_file):
             default_token = {
-                "api_token": "8d7974f38c6fae4e66f41dcf6805e648a9fa59c6682788e7fe61a4c8ea5e21e3",
-                "github_token": "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",
-                "api_url": "https://backofficewebadmin.betconstruct.com/api/tr/Client/GetClientWithdrawalRequestsWithTotals",
-                "created_at": datetime.now().isoformat(),
-                "updated_at": datetime.now().isoformat()
+                "token": "",
+                "api_url": "https://backofficewebadmin.betconstruct.com/api/tr/Client/GetClientWithdrawalRequestsWithTotals"
             }
             with open(self.token_file, 'w', encoding='utf-8') as f:
                 json.dump(default_token, f, ensure_ascii=False, indent=2)
     
-    def load_tokens(self):
+    def load_token(self):
         """Token dosyasını yükle"""
         try:
             with open(self.token_file, 'r', encoding='utf-8') as f:
-                tokens = json.load(f)
-                
-                # Eski format desteği
-                if 'api_token' not in tokens and 'token' in tokens:
-                    tokens['api_token'] = tokens.get('token', '')
-                
-                # Eksik alanları ekle
-                if 'github_token' not in tokens:
-                    tokens['github_token'] = "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"
-                
-                if 'api_url' not in tokens:
-                    tokens['api_url'] = "https://backofficewebadmin.betconstruct.com/api/tr/Client/GetClientWithdrawalRequestsWithTotals"
-                
-                return tokens
+                return json.load(f)
         except Exception as e:
             st.error(f"Token dosyası okuma hatası: {e}")
-            return {
-                "api_token": "8d7974f38c6fae4e66f41dcf6805e648a9fa59c6682788e7fe61a4c8ea5e21e3",
-                "github_token": "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",
-                "api_url": "https://backofficewebadmin.betconstruct.com/api/tr/Client/GetClientWithdrawalRequestsWithTotals"
-            }
+            return {"token": "", "api_url": ""}
     
-    def save_tokens(self, tokens):
+    def save_token(self, token, api_url):
         """Token dosyasını kaydet"""
         try:
-            tokens['updated_at'] = datetime.now().isoformat()
+            token_data = {
+                "token": token,
+                "api_url": api_url
+            }
             with open(self.token_file, 'w', encoding='utf-8') as f:
-                json.dump(tokens, f, ensure_ascii=False, indent=2)
+                json.dump(token_data, f, ensure_ascii=False, indent=2)
             return True
         except Exception as e:
             st.error(f"Token kaydetme hatası: {e}")
             return False
-    
-    def get_api_token(self):
-        """API token'ını getir"""
-        tokens = self.load_tokens()
-        return tokens.get('api_token', '8d7974f38c6fae4e66f41dcf6805e648a9fa59c6682788e7fe61a4c8ea5e21e3')
-    
-    def get_github_token(self):
-        """GitHub token'ını getir"""
-        tokens = self.load_tokens()
-        return tokens.get('github_token', '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')
-    
-    def get_api_url(self):
-        """API URL'ini getir"""
-        tokens = self.load_tokens()
-        return tokens.get('api_url', 'https://backofficewebadmin.betconstruct.com/api/tr/Client/GetClientWithdrawalRequestsWithTotals')
 
-# =============================================================================
-# GITHUB MANAGER CLASS
-# =============================================================================
-class GitHubManager:
-    """GitHub entegrasyonu için sınıf"""
-    
-    def __init__(self, token_manager):
-        self.token_manager = token_manager
-        self.repo_owner = None
-        self.repo_name = None
-        self.connected = False
-    
-    def connect_repository(self, repo_url):
-        """GitHub repository'sine bağlan"""
-        try:
-            # Repository URL'den owner ve name çıkar
-            if 'github.com' in repo_url:
-                parts = repo_url.replace('https://github.com/', '').replace('.git', '').strip('/').split('/')
-                if len(parts) >= 2:
-                    self.repo_owner = parts[0]
-                    self.repo_name = parts[1]
-                    
-                    st.info(f"🔍 Repository: {self.repo_owner}/{self.repo_name}")
-                    
-                    # Token kontrolü
-                    github_token = self.token_manager.get_github_token()
-                    if not github_token:
-                        st.error("❌ GitHub token bulunamadı!")
-                        return False
-                    
-                    # Token formatını kontrol et
-                    if not (github_token.startswith('github_pat_') or github_token.startswith('ghp_')):
-                        st.warning("⚠️ Token formatı şüpheli. GitHub Personal Access Token'ı kontrol edin.")
-                    
-                    st.info(f"🔑 Token uzunluğu: {len(github_token)} karakter")
-                    
-                    # Test bağlantısı
-                    test_result = self.test_connection_detailed()
-                    if test_result['success']:
-                        self.connected = True
-                        st.success(f"✅ Başarıyla bağlandı: {self.repo_owner}/{self.repo_name}")
-                        return True
-                    else:
-                        st.error(f"❌ {test_result['error']}")
-                        return False
-            else:
-                st.error("❌ Geçersiz GitHub URL formatı!")
-                return False
-        except Exception as e:
-            st.error(f"GitHub bağlantı hatası: {str(e)}")
-            return False
-    
-    def test_connection(self):
-        """GitHub bağlantısını test et"""
-        try:
-            github_token = self.token_manager.get_github_token()
-            if not github_token or not self.repo_owner or not self.repo_name:
-                return False
-            
-            url = f"https://api.github.com/repos/{self.repo_owner}/{self.repo_name}"
-            headers = {
-                'Authorization': f'token {github_token}',
-                'Accept': 'application/vnd.github.v3+json'
-            }
-            
-            response = requests.get(url, headers=headers, timeout=10)
-            return response.status_code == 200
-        except Exception:
-            return False
-    
-    def test_connection_detailed(self):
-        """Detaylı GitHub bağlantı testi"""
-        try:
-            github_token = self.token_manager.get_github_token()
-            if not github_token:
-                return {'success': False, 'error': 'GitHub token bulunamadı'}
-            
-            if not self.repo_owner or not self.repo_name:
-                return {'success': False, 'error': 'Repository bilgileri eksik'}
-            
-            url = f"https://api.github.com/repos/{self.repo_owner}/{self.repo_name}"
-            headers = {
-                'Authorization': f'token {github_token}',
-                'Accept': 'application/vnd.github.v3+json',
-                'User-Agent': 'BTag-Affiliate-System'
-            }
-            
-            response = requests.get(url, headers=headers, timeout=15)
-            
-            if response.status_code == 200:
-                return {'success': True, 'error': None}
-            elif response.status_code == 401:
-                return {'success': False, 'error': 'Token geçersiz veya süresi dolmuş'}
-            elif response.status_code == 403:
-                return {'success': False, 'error': 'Token yetkisi yetersiz'}
-            elif response.status_code == 404:
-                return {'success': False, 'error': 'Repository bulunamadı veya erişim izni yok'}
-            else:
-                return {'success': False, 'error': f'HTTP {response.status_code}: {response.text[:100]}'}
-                
-        except requests.exceptions.Timeout:
-            return {'success': False, 'error': 'Bağlantı zaman aşımı'}
-        except requests.exceptions.ConnectionError:
-            return {'success': False, 'error': 'İnternet bağlantısı hatası'}
-        except Exception as e:
-            return {'success': False, 'error': f'Beklenmeyen hata: {str(e)}'}
-    
-    def sync_file(self, file_path):
-        """Dosyayı GitHub'a sync et"""
-        try:
-            if not self.connected:
-                return False
-            
-            github_token = self.token_manager.get_github_token()
-            
-            # Dosya içeriğini oku
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            
-            # Base64 encode
-            encoded_content = base64.b64encode(content.encode('utf-8')).decode('utf-8')
-            
-            # GitHub API URL
-            url = f"https://api.github.com/repos/{self.repo_owner}/{self.repo_name}/contents/{file_path}"
-            
-            headers = {
-                'Authorization': f'token {github_token}',
-                'Accept': 'application/vnd.github.v3+json'
-            }
-            
-            # Mevcut dosya SHA'sını al
-            existing_file = requests.get(url, headers=headers)
-            
-            data = {
-                'message': f'Update {file_path} - {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}',
-                'content': encoded_content
-            }
-            
-            if existing_file.status_code == 200:
-                data['sha'] = existing_file.json()['sha']
-            
-            # Dosyayı gönder
-            response = requests.put(url, headers=headers, json=data)
-            return response.status_code in [200, 201]
-            
-        except Exception as e:
-            st.error(f"GitHub sync hatası: {str(e)}")
-            return False
-
-# =============================================================================
-# UTILS CLASS
-# =============================================================================
-class Utils:
-    """Yardımcı fonksiyonlar sınıfı"""
-    
-    @staticmethod
-    def format_currency(amount, currency="TRY"):
-        """Para birimi formatla"""
-        try:
-            if amount is None:
-                return "0,00 " + currency
-            return f"{float(amount):,.2f} {currency}"
-        except (ValueError, TypeError):
-            return "0,00 " + currency
-    
-    @staticmethod
-    def format_number(number):
-        """Sayı formatla"""
-        try:
-            if number is None:
-                return "0"
-            return f"{int(number):,}"
-        except (ValueError, TypeError):
-            return "0"
-    
-    @staticmethod
-    def format_date(date_str, format_type="short"):
-        """Tarih formatla"""
-        try:
-            if not date_str or date_str in ['', 'None', 'null', None]:
-                return "Bilinmiyor"
-            
-            date_formats = [
-                '%Y-%m-%dT%H:%M:%S.%f',
-                '%Y-%m-%dT%H:%M:%S',
-                '%Y-%m-%d %H:%M:%S',
-                '%Y-%m-%d',
-                '%d.%m.%Y',
-                '%d.%m.%Y %H:%M:%S'
-            ]
-            
-            parsed_date = None
-            for fmt in date_formats:
-                try:
-                    parsed_date = datetime.strptime(str(date_str), fmt)
-                    break
-                except ValueError:
-                    continue
-            
-            if parsed_date:
-                if format_type == "short":
-                    return parsed_date.strftime('%d.%m.%Y')
-                elif format_type == "long":
-                    return parsed_date.strftime('%d.%m.%Y %H:%M')
-                else:
-                    return parsed_date.strftime('%d.%m.%Y %H:%M:%S')
-            else:
-                return str(date_str)
-                
-        except Exception:
-            return "Geçersiz tarih"
-    
-    @staticmethod
-    def calculate_days_difference(date_str):
-        """İki tarih arasındaki gün farkını hesapla"""
-        try:
-            if not date_str or date_str in ['', 'None', 'null', None]:
-                return 999
-            
-            date_formats = [
-                '%Y-%m-%dT%H:%M:%S.%f',
-                '%Y-%m-%dT%H:%M:%S',
-                '%Y-%m-%d %H:%M:%S',
-                '%Y-%m-%d',
-                '%d.%m.%Y',
-                '%d.%m.%Y %H:%M:%S'
-            ]
-            
-            target_date = None
-            for fmt in date_formats:
-                try:
-                    target_date = datetime.strptime(str(date_str), fmt)
-                    break
-                except ValueError:
-                    continue
-            
-            if target_date:
-                if target_date.tzinfo is not None:
-                    target_date = target_date.replace(tzinfo=None)
-                
-                diff = datetime.now() - target_date
-                return max(0, diff.days)
-            else:
-                return 999
-                
-        except Exception:
-            return 999
-    
-    @staticmethod
-    def validate_member_id(member_id):
-        """Üye ID'sini doğrula"""
-        try:
-            if not member_id:
-                return False
-            member_id_str = str(member_id).strip()
-            return member_id_str.isdigit() and len(member_id_str) >= 6
-        except:
-            return False
-    
-    @staticmethod
-    def safe_float(value, default=0.0):
-        """Güvenli float çevirme"""
-        try:
-            if value is None or value == '':
-                return default
-            return float(value)
-        except (ValueError, TypeError):
-            return default
-    
-    @staticmethod
-    def safe_int(value, default=0):
-        """Güvenli int çevirme"""
-        try:
-            if value is None or value == '':
-                return default
-            return int(float(value))
-        except (ValueError, TypeError):
-            return default
-
-# =============================================================================
-# DATA PROCESSOR CLASS
-# =============================================================================
 class DataProcessor:
     """Veri işleme sınıfı"""
-    
-    def __init__(self, github_manager=None):
+    def __init__(self):
         self.daily_data_file = "daily_data.json"
-        self.github_manager = github_manager
+        self.members_file = "members.json"
+        self.github_sync = GitHubSync() if GITHUB_SYNC_AVAILABLE else None
         self.ensure_data_files()
     
     def ensure_data_files(self):
@@ -389,160 +99,83 @@ class DataProcessor:
         if not os.path.exists(self.daily_data_file):
             with open(self.daily_data_file, 'w', encoding='utf-8') as f:
                 json.dump({}, f)
+        
+        if not os.path.exists(self.members_file):
+            with open(self.members_file, 'w', encoding='utf-8') as f:
+                json.dump([], f)
     
-    def process_excel_data(self, df, btag_filter=None):
-        """Excel verisini işle ve isteğe bağlı BTag filtresi uygula"""
-        try:
-            # Sütun haritalama - Türkçe ve İngilizce sütun adlarını destekle
-            column_mapping = {
-                'ID': 'member_id',
-                'Kullanıcı Adı': 'username',
-                'Username': 'username',
-                'User Name': 'username',
-                'Müşteri Adı': 'customer_name',
-                'Customer Name': 'customer_name',
-                'Full Name': 'customer_name',
-                'Para Yatırma Sayısı': 'deposit_count',
-                'Deposit Count': 'deposit_count',
-                'Yatırımlar': 'total_deposits',
-                'Deposits': 'total_deposits',
-                'Total Deposits': 'total_deposits',
-                'Para Çekme Sayısı': 'withdrawal_count',
-                'Withdrawal Count': 'withdrawal_count',
-                'Para Çekme Miktarı': 'total_withdrawals',
-                'Withdrawals': 'total_withdrawals',
-                'Total Withdrawals': 'total_withdrawals',
-                'BTag': 'btag',
-                'B Tag': 'btag',
-                'Tag': 'btag',
-                'Btag': 'btag'
-            }
-            
-            df_processed = df.copy()
-            
-            # Sütun adlarını standartlaştır
-            original_columns = df_processed.columns.tolist()
-            for old_col, new_col in column_mapping.items():
-                if old_col in df_processed.columns:
-                    df_processed = df_processed.rename(columns={old_col: new_col})
-            
-            # BTag filtreleme (eğer belirtildiyse)
-            if btag_filter:
-                if 'btag' in df_processed.columns:
-                    original_count = len(df_processed)
-                    df_processed = df_processed[df_processed['btag'].astype(str).str.contains(str(btag_filter), case=False, na=False)]
-                    filtered_count = len(df_processed)
-                    st.info(f"🎯 BTag '{btag_filter}' filtresi uygulandı: {original_count} → {filtered_count} kayıt")
-                    
-                    if filtered_count == 0:
-                        st.warning(f"⚠️ BTag '{btag_filter}' ile eşleşen kayıt bulunamadı!")
-                        return None
-                else:
-                    st.warning(f"⚠️ Excel dosyasında 'BTag' sütunu bulunamadı. Sadece '{btag_filter}' BTag'ına ait üyeler filtrelemek için Excel'de BTag sütunu olmalı.")
-                    st.info("💡 BTag sütunu olmadan tüm veriler işlenecek. BTag'a özel filtreleme için Excel'e BTag sütunu ekleyin.")
-            
-            # Gerekli sütunlar
-            required_columns = [
-                'member_id', 'username', 'customer_name', 
-                'deposit_count', 'total_deposits', 
-                'withdrawal_count', 'total_withdrawals'
-            ]
-            
-            # Eksik sütunları ekle
-            for col in required_columns:
-                if col not in df_processed.columns:
-                    if col in ['deposit_count', 'total_deposits', 'withdrawal_count', 'total_withdrawals']:
-                        df_processed[col] = 0
-                    else:
-                        df_processed[col] = ''
-            
-            # Veri tiplerini düzelt
-            numeric_columns = ['deposit_count', 'total_deposits', 'withdrawal_count', 'total_withdrawals']
-            for col in numeric_columns:
-                df_processed[col] = pd.to_numeric(df_processed[col], errors='coerce')
-                df_processed[col] = df_processed[col].fillna(0)
-            
-            string_columns = ['member_id', 'username', 'customer_name']
-            for col in string_columns:
-                df_processed[col] = df_processed[col].astype(str)
-                df_processed[col] = df_processed[col].fillna('')
-                # Boş değerleri temizle
-                df_processed[col] = df_processed[col].replace('nan', '')
-                df_processed[col] = df_processed[col].replace('None', '')
-            
-            # Boş satırları temizle
-            df_processed = df_processed[df_processed['member_id'] != '']
-            df_processed = df_processed[df_processed['member_id'] != 'nan']
-            
-            # Sütun sırasını düzenle
-            df_processed = df_processed[required_columns]
-            
-            # Veri kalitesi kontrolü
-            if len(df_processed) == 0:
-                st.warning("⚠️ İşlenebilir veri bulunamadı. Lütfen Excel formatını kontrol edin.")
-                st.info(f"Orijinal sütunlar: {original_columns}")
-                return None
-            
-            st.info(f"✅ {len(df_processed)} satır veri başarıyla işlendi.")
-            return df_processed
-            
-        except Exception as e:
-            st.error(f"Veri işleme hatası: {str(e)}")
-            return None
+    def process_excel_data(self, df):
+        """Excel verisini işle"""
+        column_mapping = {
+            'ID': 'member_id',
+            'Kullanıcı Adı': 'username', 
+            'Müşteri Adı': 'customer_name',
+            'Para Yatırma Sayısı': 'deposit_count',
+            'Yatırımlar': 'total_deposits',
+            'Para Çekme Sayısı': 'withdrawal_count',
+            'Para Çekme Miktarı': 'total_withdrawals'
+        }
+        
+        df_processed = df.copy()
+        
+        for old_col, new_col in column_mapping.items():
+            if old_col in df_processed.columns:
+                df_processed = df_processed.rename(columns={old_col: new_col})
+        
+        required_columns = ['member_id', 'username', 'customer_name', 'deposit_count', 
+                          'total_deposits', 'withdrawal_count', 'total_withdrawals']
+        
+        for col in required_columns:
+            if col not in df_processed.columns:
+                df_processed[col] = 0
+        
+        numeric_columns = ['deposit_count', 'total_deposits', 'withdrawal_count', 'total_withdrawals']
+        for col in numeric_columns:
+            df_processed[col] = pd.to_numeric(df_processed[col], errors='coerce')
+            df_processed[col] = df_processed[col].fillna(0)
+        
+        string_columns = ['member_id', 'username', 'customer_name'] 
+        for col in string_columns:
+            df_processed[col] = df_processed[col].astype(str)
+            df_processed[col] = df_processed[col].fillna('')
+        
+        return df_processed[required_columns]
     
     def save_daily_data(self, processed_df, btag, date):
-        """Günlük veriyi kaydet"""
+        """Günlük veriyi kaydet ve GitHub'a senkronize et"""
         try:
-            # Mevcut günlük veriyi yükle
-            daily_data = self.load_daily_data()
+            with open(self.daily_data_file, 'r', encoding='utf-8') as f:
+                daily_data = json.load(f)
             
             date_str = date.strftime('%Y-%m-%d')
             
-            # Tarih anahtarı yoksa oluştur
             if date_str not in daily_data:
                 daily_data[date_str] = {}
             
-            # BTag verisini kaydet
             daily_data[date_str][btag] = processed_df.to_dict('records')
             
-            # Dosyaya kaydet
             with open(self.daily_data_file, 'w', encoding='utf-8') as f:
                 json.dump(daily_data, f, ensure_ascii=False, indent=2)
             
-            # GitHub'a sync et (eğer bağlı ise ve otomatik sync aktifse)
-            if (self.github_manager and 
-                self.github_manager.connected and 
-                st.session_state.get('auto_sync_enabled', False)):
-                self.github_manager.sync_file(self.daily_data_file)
+            # Otomatik GitHub senkronizasyonu
+            if self.github_sync and self.github_sync.sync_enabled:
+                with st.spinner("GitHub'a senkronize ediliyor..."):
+                    sync_success = self.github_sync.sync_json_file(self.daily_data_file)
+                    if sync_success:
+                        st.success("🔄 Veriler GitHub'a otomatik yüklendi!")
             
             return True
-            
         except Exception as e:
-            st.error(f"Veri kaydetme hatası: {str(e)}")
+            st.error(f"Veri kaydetme hatası: {e}")
             return False
-    
-    def load_daily_data(self):
-        """Günlük veriyi yükle"""
-        try:
-            if os.path.exists(self.daily_data_file):
-                with open(self.daily_data_file, 'r', encoding='utf-8') as f:
-                    return json.load(f)
-            return {}
-        except Exception as e:
-            st.error(f"Günlük veri yükleme hatası: {str(e)}")
-            return {}
 
-# =============================================================================
-# MEMBER MANAGER CLASS
-# =============================================================================
 class MemberManager:
     """Üye yönetimi sınıfı"""
-    
-    def __init__(self, token_manager, github_manager=None):
+    def __init__(self):
         self.members_file = "members.json"
-        self.token_manager = token_manager
-        self.github_manager = github_manager
         self.ensure_members_file()
+        self.token_manager = TokenManager()
+        self.github_sync = GitHubSync() if GITHUB_SYNC_AVAILABLE else None
     
     def ensure_members_file(self):
         """Üye dosyasını oluştur"""
@@ -555,84 +188,52 @@ class MemberManager:
         try:
             with open(self.members_file, 'r', encoding='utf-8') as f:
                 return json.load(f)
-        except Exception as e:
-            st.error(f"Üye listesi yükleme hatası: {str(e)}")
+        except:
             return []
     
     def get_active_members(self):
-        """Aktif üyeleri getir (7 günden az yatırım yapmamış)"""
+        """Aktif üyeleri getir"""
         all_members = self.get_all_members()
-        return [member for member in all_members if member.get('days_without_deposit', 999) <= 7]
-    
-    def save_members(self, members):
-        """Üye listesini kaydet"""
-        try:
-            with open(self.members_file, 'w', encoding='utf-8') as f:
-                json.dump(members, f, ensure_ascii=False, indent=2)
-            
-            # GitHub'a sync et (eğer bağlı ise ve otomatik sync aktifse)
-            if (self.github_manager and 
-                self.github_manager.connected and 
-                st.session_state.get('auto_sync_enabled', False)):
-                self.github_manager.sync_file(self.members_file)
-            
-            return True
-        except Exception as e:
-            st.error(f"Üye listesi kaydetme hatası: {str(e)}")
-            return False
+        return [member for member in all_members if member.get('is_active', True)]
     
     def add_member(self, member_id, username, full_name):
         """Yeni üye ekle"""
         try:
             members = self.get_all_members()
             
-            # Üye zaten var mı kontrol et
             existing_member = next((m for m in members if m['member_id'] == str(member_id)), None)
             if existing_member:
-                st.warning(f"⚠️ Üye zaten mevcut: {username} (ID: {member_id})")
                 return False
             
-            # Yeni üye verisi oluştur
             new_member = {
                 "member_id": str(member_id),
-                "username": username or f"User_{member_id}",
-                "full_name": full_name or f"Member {member_id}",
+                "username": username,
+                "full_name": full_name,
                 "is_active": True,
                 "created_at": datetime.now().isoformat(),
                 "last_deposit_date": None,
-                "days_without_deposit": 999,
-                "api_data": {},
-                "last_api_update": None,
-                "email": "",
-                "phone": "",
-                "balance": 0,
-                "currency": "TRY",
-                "total_deposits": 0,
-                "total_withdrawals": 0
+                "days_without_deposit": 0,
+                "api_data": {}
             }
             
-            # Listeye ekle
             members.append(new_member)
             
-            # Kaydet
-            success = self.save_members(members)
+            with open(self.members_file, 'w', encoding='utf-8') as f:
+                json.dump(members, f, ensure_ascii=False, indent=2)
             
-            if success:
-                # API'den veri çekmeyi dene
-                self.fetch_member_api_data(str(member_id))
+            # Üye eklendikten sonra API'den veri çek
+            self.fetch_member_api_data(str(member_id))
             
-            return success
-            
+            return True
         except Exception as e:
-            st.error(f"Üye ekleme hatası: {str(e)}")
+            st.error(f"Üye ekleme hatası: {e}")
             return False
     
     def add_members_bulk(self, member_ids):
-        """Toplu üye ekleme"""
+        """Toplu üye ekleme - API'den detaylı bilgilerle"""
         added_count = 0
         failed_ids = []
         
-        # Progress bar oluştur
         progress_bar = st.progress(0)
         status_text = st.empty()
         
@@ -640,82 +241,81 @@ class MemberManager:
             if member_id.strip():
                 status_text.text(f"İşleniyor: {member_id.strip()}")
                 
-                success = self.add_member(
-                    member_id.strip(),
-                    f"User_{member_id.strip()}",
-                    f"Member {member_id.strip()}"
-                )
+                # API'den üye bilgilerini çek
+                member_data = self.fetch_member_api_data(member_id.strip())
                 
-                if success:
-                    added_count += 1
-                    self.fetch_member_api_data(member_id.strip())
+                if member_data and member_data.get('username'):
+                    success = self.add_member(
+                        member_id.strip(),
+                        member_data.get('username', f'User_{member_id}'),
+                        member_data.get('full_name', f'Member {member_id}')
+                    )
+                    if success:
+                        added_count += 1
+                    else:
+                        failed_ids.append(member_id.strip())
                 else:
                     failed_ids.append(member_id.strip())
                 
-                # Progress güncelle
+                # Progress güncellemesi
                 progress = (i + 1) / len(member_ids)
                 progress_bar.progress(progress)
         
-        # Progress bar'ı temizle
         progress_bar.empty()
         status_text.empty()
         
-        # Sonuçları göster
         if failed_ids:
-            st.warning(f"⚠️ {len(failed_ids)} ID eklenemedi: {', '.join(failed_ids[:5])}{'...' if len(failed_ids) > 5 else ''}")
+            st.warning(f"⚠️ {len(failed_ids)} ID için veri çekilemedi: {', '.join(failed_ids[:5])}{'...' if len(failed_ids) > 5 else ''}")
         
         return added_count
     
     def fetch_member_api_data(self, member_id):
         """API'den üye verilerini çek"""
         try:
-            api_token = self.token_manager.get_api_token()
+            token_data = self.token_manager.load_token()
+            token = token_data.get('token', '')
             
-            if not api_token:
+            if not token:
                 return None
             
-            # API URL'ini oluştur
+            # Kim.py'deki API yapısını kullan
             api_url = f"https://backofficewebadmin.betconstruct.com/api/tr/Client/GetClientById?id={member_id}"
             
-            # Request headers
             headers = {
-                'Authentication': api_token,
+                'Authentication': token,
                 'Accept': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
                 'Referer': 'https://backoffice.betconstruct.com/',
                 'Origin': 'https://backoffice.betconstruct.com',
                 'X-Requested-With': 'XMLHttpRequest'
             }
             
-            # API çağrısı
+            # API çağrısı yap
             response = requests.get(api_url, headers=headers, timeout=10)
             
             if response.status_code == 200:
                 data = response.json()
                 
-                # API yanıtını işle
+                # API verisini işle ve standartlaştır
                 processed_data = self.process_api_response(data)
                 
-                if processed_data:
-                    # Üye veritabanını güncelle
-                    self.update_member_api_data(member_id, processed_data)
-                    return processed_data
+                # Üye veritabanını güncelle
+                self.update_member_api_data(member_id, processed_data)
+                
+                return processed_data
             else:
-                st.warning(f"⚠️ API yanıt hatası ({response.status_code}): {member_id}")
+                st.warning(f"API yanıt hatası ({response.status_code}): {member_id}")
                 return None
                 
         except Exception as e:
-            st.warning(f"⚠️ API çağrısı hatası: {str(e)}")
+            st.warning(f"API çağrısı hatası: {e}")
             return None
     
     def process_api_response(self, api_data):
         """API yanıtını işle ve standartlaştır"""
         try:
-            # API yanıtındaki Data kısmını al
+            # Kim.py'deki yapıya göre Data içindeki bilgileri al
             data = api_data.get('Data', {})
-            
-            if not data:
-                return None
             
             processed = {
                 'username': data.get('Login', ''),
@@ -731,26 +331,25 @@ class MemberManager:
                 'birth_date': data.get('BirthDate', ''),
                 'last_deposit_date': data.get('LastDepositDateLocal', ''),
                 'last_casino_bet': data.get('LastCasinoBetTimeLocal', ''),
-                'total_deposits': 0,
+                'total_deposits': 0,  # Bu bilgiler ayrı API'den gelebilir
                 'total_withdrawals': 0,
                 'deposit_count': 0,
                 'withdrawal_count': 0
             }
             
             # Son yatırım tarihinden bugüne kadar geçen günleri hesapla
-            if processed['last_deposit_date'] and processed['last_deposit_date'] not in ['', 'Bilinmiyor', None]:
+            if processed['last_deposit_date'] and processed['last_deposit_date'] != 'Bilinmiyor':
                 try:
-                    date_str = str(processed['last_deposit_date'])
+                    # Farklı tarih formatlarını dene
+                    date_str = processed['last_deposit_date']
                     if 'T' in date_str:
                         last_deposit = datetime.fromisoformat(date_str.replace('Z', ''))
-                    elif '.' in date_str and len(date_str.split('.')) == 3:
-                        last_deposit = datetime.strptime(date_str.split(' ')[0], '%d.%m.%Y')
                     else:
-                        last_deposit = datetime.fromisoformat(date_str)
+                        last_deposit = datetime.strptime(date_str.split(' ')[0], '%d.%m.%Y')
                     
                     days_diff = (datetime.now() - last_deposit).days
                     processed['days_without_deposit'] = max(0, days_diff)
-                except Exception:
+                except Exception as e:
                     processed['days_without_deposit'] = 999
             else:
                 processed['days_without_deposit'] = 999
@@ -758,1079 +357,1152 @@ class MemberManager:
             return processed
             
         except Exception as e:
-            st.error(f"API yanıt işleme hatası: {str(e)}")
-            return None
+            st.error(f"API veri işleme hatası: {e}")
+            return {}
     
     def update_member_api_data(self, member_id, api_data):
-        """Üye API verilerini güncelle"""
+        """Üye API verisini güncelle"""
         try:
             members = self.get_all_members()
             
-            # Üyeyi bul
-            member_index = -1
-            for i, member in enumerate(members):
+            for member in members:
                 if member['member_id'] == str(member_id):
-                    member_index = i
+                    member['api_data'] = api_data
+                    member['last_api_update'] = datetime.now().isoformat()
+                    
+                    # API'den gelen bilgileri üye kaydına ekle
+                    if api_data:
+                        member['email'] = api_data.get('email', '')
+                        member['phone'] = api_data.get('phone', '')
+                        member['balance'] = api_data.get('balance', 0)
+                        member['currency'] = api_data.get('currency', 'TRY')
+                        member['total_deposits'] = api_data.get('total_deposits', 0)
+                        member['total_withdrawals'] = api_data.get('total_withdrawals', 0)
+                        member['last_deposit_date'] = api_data.get('last_deposit_date', '')
+                        member['last_casino_bet'] = api_data.get('last_casino_bet', '')
+                        member['days_without_deposit'] = api_data.get('days_without_deposit', 999)
+                        member['registration_date'] = api_data.get('registration_date', '')
+                        member['last_login_date'] = api_data.get('last_login_date', '')
+                        member['partner_name'] = api_data.get('partner_name', '')
+                        member['birth_date'] = api_data.get('birth_date', '')
+                    
                     break
             
-            if member_index >= 0:
-                # Mevcut üyeyi güncelle
-                members[member_index]['api_data'] = api_data
-                members[member_index]['last_api_update'] = datetime.now().isoformat()
-                
-                # Bazı alanları üye kaydına da kopyala
-                if api_data:
-                    if api_data.get('username'):
-                        members[member_index]['username'] = api_data['username']
-                    if api_data.get('full_name'):
-                        members[member_index]['full_name'] = api_data['full_name']
-                    
-                    members[member_index]['email'] = api_data.get('email', '')
-                    members[member_index]['phone'] = api_data.get('phone', '')
-                    members[member_index]['balance'] = api_data.get('balance', 0)
-                    members[member_index]['currency'] = api_data.get('currency', 'TRY')
-                    members[member_index]['total_deposits'] = api_data.get('total_deposits', 0)
-                    members[member_index]['total_withdrawals'] = api_data.get('total_withdrawals', 0)
-                    members[member_index]['last_deposit_date'] = api_data.get('last_deposit_date')
-                    members[member_index]['days_without_deposit'] = api_data.get('days_without_deposit', 999)
-                
-                # Kaydet
-                return self.save_members(members)
-            
-            return False
+            with open(self.members_file, 'w', encoding='utf-8') as f:
+                json.dump(members, f, ensure_ascii=False, indent=2)
             
         except Exception as e:
-            st.error(f"Üye API veri güncelleme hatası: {str(e)}")
-            return False
-
-# =============================================================================
-# VISUALIZATION CLASS
-# =============================================================================
-class Visualization:
-    """Veri görselleştirme sınıfı"""
+            st.error(f"Üye API verisi güncelleme hatası: {e}")
     
-    def __init__(self):
-        self.default_colors = px.colors.qualitative.Set3
-    
-    def create_empty_chart(self, message):
-        """Boş grafik oluştur"""
-        fig = go.Figure()
-        fig.add_annotation(
-            text=message,
-            xref="paper", yref="paper",
-            x=0.5, y=0.5,
-            showarrow=False,
-            font=dict(size=16)
-        )
-        fig.update_layout(
-            xaxis=dict(showgrid=False, showticklabels=False, zeroline=False),
-            yaxis=dict(showgrid=False, showticklabels=False, zeroline=False),
-            height=400
-        )
-        return fig
-    
-    def create_member_distribution_charts(self, members):
-        """Üye dağılım grafikleri oluştur"""
+    def toggle_member_status(self, member_id):
+        """Üye durumunu değiştir"""
         try:
-            if not members:
-                return self.create_empty_chart("Üye verisi bulunamadı")
-            
-            # Alt grafikler oluştur
-            fig = make_subplots(
-                rows=2, cols=2,
-                subplot_titles=('Durum Dağılımı', 'Son Yatırım Analizi', 'Bakiye Dağılımı', 'Günlere Göre Dağılım'),
-                specs=[[{"type": "pie"}, {"type": "bar"}],
-                       [{"type": "histogram"}, {"type": "bar"}]]
-            )
-            
-            # 1. Durum dağılımı (Pie chart) - 7 günden fazla yatırım yapmamış = Pasif
-            status_counts = {}
-            for member in members:
-                status = 'Aktif' if member.get('days_without_deposit', 999) <= 7 else 'Pasif'
-                status_counts[status] = status_counts.get(status, 0) + 1
-            
-            fig.add_trace(
-                go.Pie(
-                    labels=list(status_counts.keys()),
-                    values=list(status_counts.values()),
-                    name="Durum"
-                ),
-                row=1, col=1
-            )
-            
-            # 2. Son yatırım analizi (Bar chart)
-            deposit_ranges = {
-                '0-7 gün': 0,
-                '8-30 gün': 0,
-                '31-90 gün': 0,
-                '90+ gün': 0
-            }
+            members = self.get_all_members()
             
             for member in members:
-                days = member.get('days_without_deposit', 999)
-                if days <= 7:
-                    deposit_ranges['0-7 gün'] += 1
-                elif days <= 30:
-                    deposit_ranges['8-30 gün'] += 1
-                elif days <= 90:
-                    deposit_ranges['31-90 gün'] += 1
-                else:
-                    deposit_ranges['90+ gün'] += 1
+                if member['member_id'] == str(member_id):
+                    member['is_active'] = not member.get('is_active', True)
+                    member['updated_at'] = datetime.now().isoformat()
+                    break
             
-            fig.add_trace(
-                go.Bar(
-                    x=list(deposit_ranges.keys()),
-                    y=list(deposit_ranges.values()),
-                    name="Son Yatırım",
-                    marker_color='lightblue'
-                ),
-                row=1, col=2
-            )
+            with open(self.members_file, 'w', encoding='utf-8') as f:
+                json.dump(members, f, ensure_ascii=False, indent=2)
             
-            # 3. Bakiye dağılımı (Histogram)
-            balances = [member.get('balance', 0) for member in members if member.get('balance', 0) > 0]
-            
-            if balances:
-                fig.add_trace(
-                    go.Histogram(
-                        x=balances,
-                        name="Bakiye",
-                        marker_color='lightgreen'
-                    ),
-                    row=2, col=1
-                )
-            
-            # 4. Günlere göre dağılım (Bar chart)
-            day_ranges = {
-                '0-7': 0, '8-14': 0, '15-30': 0, '31-60': 0, '60+': 0
-            }
-            
-            for member in members:
-                days = member.get('days_without_deposit', 999)
-                if days <= 7:
-                    day_ranges['0-7'] += 1
-                elif days <= 14:
-                    day_ranges['8-14'] += 1
-                elif days <= 30:
-                    day_ranges['15-30'] += 1
-                elif days <= 60:
-                    day_ranges['31-60'] += 1
-                else:
-                    day_ranges['60+'] += 1
-            
-            fig.add_trace(
-                go.Bar(
-                    x=list(day_ranges.keys()),
-                    y=list(day_ranges.values()),
-                    name="Gün Aralıkları",
-                    marker_color='orange'
-                ),
-                row=2, col=2
-            )
-            
-            fig.update_layout(
-                height=600,
-                title_text="Üye Dağılım Analizi",
-                showlegend=False
-            )
-            
-            return fig
-            
-        except Exception as e:
-            st.error(f"Üye dağılım grafiği hatası: {str(e)}")
-            return self.create_empty_chart("Grafik oluşturulamadı")
-    
-    def create_top_members_chart(self, members, metric='total_deposits', top_n=10):
-        """En iyi üyeler grafiği"""
-        try:
-            if not members:
-                return self.create_empty_chart("Üye verisi bulunamadı")
-            
-            # Metrik değerlerine göre sırala
-            sorted_members = sorted(
-                members, 
-                key=lambda x: x.get(metric, 0), 
-                reverse=True
-            )[:top_n]
-            
-            names = [m.get('username', 'N/A') for m in sorted_members]
-            values = [m.get(metric, 0) for m in sorted_members]
-            
-            metric_labels = {
-                'total_deposits': 'Toplam Yatırım (TRY)',
-                'balance': 'Bakiye (TRY)',
-                'deposit_count': 'Yatırım Sayısı',
-                'days_without_deposit': 'Yatırımsız Gün Sayısı'
-            }
-            
-            title = f"En İyi {top_n} Üye - {metric_labels.get(metric, metric)}"
-            
-            fig = go.Figure(
-                data=[
-                    go.Bar(
-                        x=names,
-                        y=values,
-                        marker_color='lightblue'
-                    )
-                ]
-            )
-            
-            fig.update_layout(
-                title=title,
-                xaxis_title='Üyeler',
-                yaxis_title=metric_labels.get(metric, metric),
-                height=400,
-                xaxis_tickangle=-45
-            )
-            
-            return fig
-            
-        except Exception as e:
-            st.error(f"En iyi üyeler grafiği hatası: {str(e)}")
-            return self.create_empty_chart("Grafik oluşturulamadı")
-
-# =============================================================================
-# DAILY DATA MANAGER CLASS
-# =============================================================================
-class DailyDataManager:
-    """Günlük veri yönetimi sınıfı"""
-    
-    def __init__(self):
-        self.daily_data_file = "daily_data.json"
-        self.ensure_daily_data_file()
-    
-    def ensure_daily_data_file(self):
-        """Günlük veri dosyasını oluştur"""
-        if not os.path.exists(self.daily_data_file):
-            with open(self.daily_data_file, 'w', encoding='utf-8') as f:
-                json.dump({}, f)
-    
-    def load_daily_data(self):
-        """Günlük veriyi yükle"""
-        try:
-            with open(self.daily_data_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except Exception as e:
-            st.error(f"Günlük veri yükleme hatası: {str(e)}")
-            return {}
-    
-    def save_daily_data(self, data):
-        """Günlük veriyi kaydet"""
-        try:
-            with open(self.daily_data_file, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
             return True
         except Exception as e:
-            st.error(f"Günlük veri kaydetme hatası: {str(e)}")
+            st.error(f"Üye durumu değiştirme hatası: {e}")
             return False
 
-# =============================================================================
-# MAIN APPLICATION
-# =============================================================================
-def main():
-    """Ana uygulama fonksiyonu"""
+def show_settings():
+    """Ayarlar sayfası"""
+    st.header("⚙️ Ayarlar")
     
-    # Başlık
-    st.title("📊 BTag Affiliate Takip Sistemi")
-    st.markdown("---")
+    # API Ayarları Sekmesi
+    tab1, tab2 = st.tabs(["🔑 API Ayarları", "🔄 GitHub Senkronizasyon"])
     
-    # Session state başlatma
-    if 'token_manager' not in st.session_state:
-        st.session_state.token_manager = TokenManager()
-    
-    if 'github_manager' not in st.session_state:
-        st.session_state.github_manager = GitHubManager(st.session_state.token_manager)
-    
-    if 'member_manager' not in st.session_state:
-        st.session_state.member_manager = MemberManager(
-            st.session_state.token_manager, 
-            st.session_state.github_manager
-        )
-    
-    if 'visualization' not in st.session_state:
-        st.session_state.visualization = Visualization()
-    
-    if 'daily_data_manager' not in st.session_state:
-        st.session_state.daily_data_manager = DailyDataManager()
-    
-    # Sidebar
-    with st.sidebar:
-        st.header("🎛️ Kontrol Paneli")
+    with tab1:
+        st.subheader("📋 API Token Ayarları")
         
-        # Ana menü
-        menu_option = st.selectbox(
-            "Menü Seçin:",
-            [
-                "🏠 Ana Sayfa",
-                "👥 Üye Yönetimi", 
-                "📊 Raporlar",
-                "📈 Analizler",
-                "🔧 Ayarlar",
-                "🔗 GitHub Entegrasyonu"
-            ]
-        )
+        token_manager = TokenManager()
+        token_data = token_manager.load_token()
         
-        st.markdown("---")
-        
-        # Hızlı bilgiler
-        members = st.session_state.member_manager.get_all_members()
-        active_members = st.session_state.member_manager.get_active_members()
-        
-        st.metric("Toplam Üye", len(members))
-        st.metric("Aktif Üye", len(active_members))
-        
-        if members:
-            total_balance = sum(m.get('balance', 0) for m in members)
-            st.metric("Toplam Bakiye", Utils.format_currency(total_balance))
-    
-    # Ana içerik
-    if menu_option == "🏠 Ana Sayfa":
-        show_dashboard()
-    elif menu_option == "👥 Üye Yönetimi":
-        show_member_management()
-    elif menu_option == "📊 Raporlar":
-        show_reports()
-    elif menu_option == "📈 Analizler":
-        show_analytics()
-    elif menu_option == "🔧 Ayarlar":
-        show_settings()
-    elif menu_option == "🔗 GitHub Entegrasyonu":
-        show_github_integration()
-
-def show_dashboard():
-    """Ana sayfa dashboard"""
-    st.header("🏠 Ana Sayfa")
-    
-    # Özet kartlar
-    col1, col2, col3, col4 = st.columns(4)
-    
-    members = st.session_state.member_manager.get_all_members()
-    active_members = st.session_state.member_manager.get_active_members()
-    
-    with col1:
-        st.metric(
-            label="Toplam Üye", 
-            value=len(members),
-            delta=f"+{len([m for m in members if Utils.calculate_days_difference(m.get('created_at', '')) <= 7])} (7 gün)"
-        )
-    
-    with col2:
-        st.metric(
-            label="Aktif Üye", 
-            value=len(active_members),
-            delta=f"{len(active_members)/len(members)*100:.1f}%" if members else "0%"
-        )
-    
-    with col3:
-        total_balance = sum(m.get('balance', 0) for m in members)
-        st.metric(
-            label="Toplam Bakiye", 
-            value=Utils.format_currency(total_balance, "TRY")
-        )
-    
-    with col4:
-        recent_deposits = len([m for m in members if m.get('days_without_deposit', 999) <= 7])
-        st.metric(
-            label="Son 7 Gün Yatırım", 
-            value=recent_deposits,
-            delta=f"{recent_deposits/len(members)*100:.1f}%" if members else "0%"
-        )
-    
-    st.markdown("---")
-    
-    # Grafikler
-    if members:
-        col1, col2 = st.columns(2)
+        col1, col2 = st.columns([1, 1])
         
         with col1:
-            st.subheader("📊 Üye Dağılım Analizi")
-            fig = st.session_state.visualization.create_member_distribution_charts(members)
-            st.plotly_chart(fig, use_container_width=True)
+            st.subheader("📋 Mevcut Token Bilgileri")
+            st.code(token_data.get('token', 'Token bulunamadı'), language='text')
+            st.text(f"API URL: {token_data.get('api_url', '')}")
         
         with col2:
-            st.subheader("🏆 En İyi 10 Üye (Bakiye)")
-            fig = st.session_state.visualization.create_top_members_chart(members, 'balance', 10)
-            st.plotly_chart(fig, use_container_width=True)
+            st.subheader("🔧 Token Güncelleme")
+            new_token = st.text_input("Token", value=token_data.get('token', ''), type='password')
+            new_api_url = st.text_input("API URL", value=token_data.get('api_url', ''))
+            
+            if st.button("💾 Token Kaydet", type='primary'):
+                if new_token and new_api_url:
+                    success = token_manager.save_token(new_token, new_api_url)
+                    if success:
+                        st.success("✅ Token başarıyla kaydedildi!")
+                        st.rerun()
+                    else:
+                        st.error("❌ Token kaydetme hatası!")
+                else:
+                    st.error("❌ Lütfen tüm alanları doldurun!")
     
+    with tab2:
+        st.subheader("🔄 GitHub Otomatik Senkronizasyon")
+        
+        if not GITHUB_SYNC_AVAILABLE:
+            st.warning("⚠️ GitHub senkronizasyon modülü bulunamadı!")
+            st.info("📦 GitHub özelliklerini kullanmak için requirements.txt dosyasını GitHub'a yükleyin.")
+            return
+        
+        # GitHub Sync nesnesi oluştur
+        github_sync = GitHubSync()
+        
+        # Repository bilgilerini göster
+        repo_info = github_sync.get_repo_info() if github_sync.sync_enabled else None
+        if repo_info:
+            st.success("✅ GitHub bağlantısı başarılı!")
+            
+            col1, col2 = st.columns([1, 1])
+            
+            with col1:
+                st.info(f"""
+                **📁 Repository:** {repo_info['full_name']}
+                **🔗 URL:** {repo_info['url']}
+                **📅 Son Push:** {repo_info['last_push']}
+                **📊 Toplam Commit:** {repo_info['commits']}
+                """)
+            
+            with col2:
+                st.subheader("🚀 Senkronizasyon İşlemleri")
+                
+                if st.button("🔄 Tüm Dosyaları Senkronize Et", type='primary'):
+                    github_sync.sync_all_files()
+                
+                st.markdown("---")
+                
+                # Tek tek dosya senkronizasyonu
+                st.subheader("📁 Tek Dosya Senkronizasyonu")
+                
+                col_btn1, col_btn2 = st.columns(2)
+                
+                with col_btn1:
+                    if st.button("📄 btag.py"):
+                        github_sync.sync_python_file("btag.py", "btag_affiliate_system.py")
+                    
+                    if st.button("📊 daily_data.json"):
+                        github_sync.sync_json_file("daily_data.json")
+                
+                with col_btn2:
+                    if st.button("👥 members.json"):
+                        github_sync.sync_json_file("members.json")
+                    
+                    if st.button("🔑 token.json"):
+                        github_sync.sync_json_file("token.json")
+        
+        else:
+            st.error("❌ GitHub bağlantısı başarısız!")
+            st.info("""
+            **GitHub Senkronizasyon Özellikleri:**
+            - Otomatik dosya yükleme
+            - Veri dosyalarını senkronize etme
+            - Streamlit Cloud otomatik güncelleme
+            - Repository bilgilerini görüntüleme
+            """)
+        
+        st.markdown("---")
+        st.subheader("ℹ️ Bilgi")
+        st.info("""
+        **GitHub Senkronizasyon Nasıl Çalışır:**
+        1. 🔄 Yerel değişikliklerinizi GitHub'a otomatik yükler
+        2. 🌐 Streamlit Cloud otomatik olarak güncellenir
+        3. 📊 Veri dosyaları (JSON) senkronize edilir
+        4. 💻 Kod değişiklikleri anında yansır
+        
+        **Senkronize Edilen Dosyalar:**
+        - `btag.py` → `btag_affiliate_system.py`
+        - `daily_data.json`
+        - `members.json` 
+        - `token.json`
+        """)
+
+def show_dashboard():
+    """Ana sayfa göster"""
+    st.header("🏠 Ana Sayfa")
+    
+    member_manager = MemberManager()
+    data_processor = DataProcessor()
+    
+    current_month = datetime.now().strftime("%Y-%m")
+    st.subheader(f"📅 Mevcut Ay: {datetime.now().strftime('%B %Y')}")
+    
+    members = member_manager.get_active_members()
+    total_members = len(members)
+    
+    # Günlük verileri yükle
+    try:
+        with open(data_processor.daily_data_file, 'r', encoding='utf-8') as f:
+            daily_data = json.load(f)
+    except:
+        daily_data = {}
+    
+    # Bu ay için toplam hesaplamaları
+    current_month_data = {}
+    total_deposits = 0
+    total_withdrawals = 0
+    total_net = 0
+    
+    # Aktif üyelerin ID'lerini al
+    active_member_ids = [str(m['member_id']) for m in members]
+    
+    for date, btag_data in daily_data.items():
+        if date.startswith(current_month):
+            for btag, records in btag_data.items():
+                for record in records:
+                    # Sadece aktif üyelerin verilerini dahil et
+                    member_id = str(record.get('member_id', ''))
+                    if member_id in active_member_ids:
+                        total_deposits += record.get('total_deposits', 0)
+                        total_withdrawals += record.get('total_withdrawals', 0)
+    
+    total_net = total_deposits - total_withdrawals
+    
+    # Metrikler
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("👥 Toplam Üye", total_members)
+    
+    with col2:
+        # Pasif üyeler (1 haftadan fazla yatırım yapmayan)
+        passive_members = len([m for m in members if m.get('days_without_deposit', 0) > 7])
+        st.metric("⚠️ Pasif Üyeler", passive_members)
+    
+    with col3:
+        st.metric("💰 Toplam Yatırım", f"{total_deposits:,.0f} TL")
+    
+    with col4:
+        st.metric("💸 Toplam Çekim", f"{total_withdrawals:,.0f} TL")
+    
+    # Aktif/Pasif Üye Dağılımı Pie Chart
+    st.markdown("---")
+    st.subheader("👥 Üye Durumu Dağılımı")
+    
+    # Aktif ve pasif üye sayılarını hesapla
+    active_members = total_members - passive_members
+    
+    if total_members > 0:
+        col_chart1, col_chart2 = st.columns([2, 1])
+        
+        with col_chart1:
+            # Pie chart verilerini hazırla
+            pie_data = {
+                'Durum': ['Aktif Üyeler', 'Pasif Üyeler'],
+                'Sayı': [active_members, passive_members],
+                'Renk': ['#00CC96', '#FF6B6B']
+            }
+            
+            # Pie chart oluştur
+            fig_pie = px.pie(
+                values=pie_data['Sayı'], 
+                names=pie_data['Durum'],
+                title='Üye Durumu Dağılımı',
+                color_discrete_sequence=['#00CC96', '#FF6B6B']
+            )
+            
+            # Grafik ayarları
+            fig_pie.update_traces(
+                textposition='inside', 
+                textinfo='percent+label',
+                hovertemplate='<b>%{label}</b><br>Sayı: %{value}<br>Oran: %{percent}<extra></extra>'
+            )
+            
+            fig_pie.update_layout(
+                showlegend=True,
+                height=400,
+                font=dict(size=14)
+            )
+            
+            st.plotly_chart(fig_pie, use_container_width=True)
+        
+        with col_chart2:
+            st.markdown("### 📊 Detaylar")
+            st.markdown(f"**🟢 Aktif Üyeler:** {active_members}")
+            st.markdown(f"**🔴 Pasif Üyeler:** {passive_members}")
+            st.markdown("---")
+            
+            if total_members > 0:
+                active_percentage = (active_members / total_members) * 100
+                passive_percentage = (passive_members / total_members) * 100
+                
+                st.markdown(f"**Aktif Oran:** {active_percentage:.1f}%")
+                st.markdown(f"**Pasif Oran:** {passive_percentage:.1f}%")
+                
+                # Durum değerlendirmesi
+                if active_percentage >= 80:
+                    st.success("✅ Mükemmel! Üyelerin çoğu aktif.")
+                elif active_percentage >= 60:
+                    st.warning("⚠️ İyi durumda, ancak pasif üye sayısı artıyor.")
+                else:
+                    st.error("🚨 Dikkat! Pasif üye oranı yüksek.")
     else:
-        st.info("📝 Henüz üye verisi bulunmuyor. Üye Yönetimi bölümünden üye ekleyebilirsiniz.")
+        st.info("📝 Henüz üye bulunmuyor.")
+    
+    # Net kar/zarar
+    st.markdown("---")
+    col_net1, col_net2, col_net3 = st.columns([1, 2, 1])
+    with col_net2:
+        if total_net >= 0:
+            st.success(f"📈 **Net Kar: {total_net:,.0f} TL**")
+        else:
+            st.error(f"📉 **Net Zarar: {abs(total_net):,.0f} TL**")
+    
+    st.markdown("---")
+    
+    # Günlük istatistikler
+    if daily_data:
+        st.subheader("📊 Son 7 Günün İstatistikleri")
+        
+        # Son 7 günün verilerini al
+        recent_dates = sorted(daily_data.keys())[-7:]
+        daily_stats = []
+        
+        for date in recent_dates:
+            date_deposits = 0
+            date_withdrawals = 0
+            date_deposit_count = 0
+            date_withdrawal_count = 0
+            
+            for btag, records in daily_data[date].items():
+                for record in records:
+                    # Sadece aktif üyelerin verilerini dahil et
+                    member_id = str(record.get('member_id', ''))
+                    if member_id in active_member_ids:
+                        date_deposits += record.get('total_deposits', 0)
+                        date_withdrawals += record.get('total_withdrawals', 0)
+                        date_deposit_count += record.get('deposit_count', 0)
+                        date_withdrawal_count += record.get('withdrawal_count', 0)
+            
+            daily_stats.append({
+                'Tarih': date,
+                'Yatırım Adedi': date_deposit_count,
+                'Yatırım Miktarı': date_deposits,
+                'Çekim Adedi': date_withdrawal_count,
+                'Çekim Miktarı': date_withdrawals,
+                'Net': date_deposits - date_withdrawals
+            })
+        
+        if daily_stats:
+            df_stats = pd.DataFrame(daily_stats)
+            
+            # Grafik
+            fig = px.bar(df_stats, x='Tarih', y=['Yatırım Miktarı', 'Çekim Miktarı'], 
+                        title='Son 7 Günün Yatırım-Çekim Grafiği',
+                        color_discrete_map={'Yatırım Miktarı': 'green', 'Çekim Miktarı': 'red'})
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Tablo
+            def color_net(val):
+                color = 'green' if val >= 0 else 'red'
+                return f'color: {color}; font-weight: bold'
+            
+            styled_df = df_stats.style.map(color_net, subset=['Net'])
+            styled_df = styled_df.format({
+                'Yatırım Miktarı': '{:,.0f} TL',
+                'Çekim Miktarı': '{:,.0f} TL', 
+                'Net': '{:,.0f} TL'
+            })
+            st.dataframe(styled_df, use_container_width=True)
+    
+    st.markdown("---")
+    
+    # Pasif üye uyarıları
+    if passive_members > 0:
+        st.warning(f"🚨 {passive_members} üye 7 günden fazladır yatırım yapmıyor!")
+        
+        with st.expander("Pasif Üyeleri Göster"):
+            passive_list = [m for m in members if m.get('days_without_deposit', 0) > 7]
+            for member in passive_list:
+                days = member.get('days_without_deposit', 0)
+                st.write(f"• {member['full_name']} ({member['username']}) - {days} gündür yatırım yapmıyor")
+
+def show_excel_upload():
+    """Excel yükleme sayfası"""
+    st.header("📤 Excel Dosyası Yükleme")
+    
+    data_processor = DataProcessor()
+    member_manager = MemberManager()
+    
+    btag_input = st.text_input("🏷️ BTag Numarası", placeholder="Örnek: 2424878")
+    
+    uploaded_file = st.file_uploader(
+        "📁 Players Report Excel Dosyasını Seçin",
+        type=['xlsx', 'xls'],
+        help="players-report.xlsx formatında dosya yükleyin"
+    )
+    
+    if uploaded_file and btag_input:
+        try:
+            df = pd.read_excel(uploaded_file)
+            st.success(f"✅ Excel dosyası başarıyla yüklendi! {len(df)} satır bulundu.")
+            
+            with st.expander("📋 Veri Önizleme"):
+                st.dataframe(df.head(), use_container_width=True)
+            
+            if 'BTag' in df.columns:
+                filtered_df = df[df['BTag'].astype(str) == str(btag_input)]
+                st.info(f"🎯 BTag {btag_input} için {len(filtered_df)} kayıt bulundu.")
+                
+                if len(filtered_df) > 0:
+                    processed_data = data_processor.process_excel_data(filtered_df)
+                    
+                    # Yeni üye kontrolü
+                    current_members = member_manager.get_all_members()
+                    current_member_ids = [str(m['member_id']) for m in current_members]
+                    
+                    new_members = []
+                    for _, row in processed_data.iterrows():
+                        if str(row['member_id']) not in current_member_ids:
+                            new_members.append({
+                                'member_id': str(row['member_id']),
+                                'username': row['username'],
+                                'full_name': row['customer_name']
+                            })
+                    
+                    if new_members:
+                        st.warning(f"🆕 {len(new_members)} yeni üye bulundu!")
+                        
+                        new_members_df = pd.DataFrame(new_members)
+                        st.dataframe(new_members_df, use_container_width=True)
+                        
+                        if st.button("➕ Yeni Üyeleri Ekle"):
+                            for member in new_members:
+                                member_manager.add_member(
+                                    member['member_id'],
+                                    member['username'],
+                                    member['full_name']
+                                )
+                            st.success("✅ Yeni üyeler başarıyla eklendi!")
+                            st.rerun()
+                    
+                    # İşlenmiş veriyi göster
+                    st.subheader("📊 İşlenmiş Veriler")
+                    
+                    display_df = processed_data.copy()
+                    display_df = display_df.rename(columns={
+                        'member_id': 'Üye ID',
+                        'username': 'Kullanıcı Adı',
+                        'customer_name': 'Müşteri Adı',
+                        'deposit_count': 'Yatırım Adedi',
+                        'total_deposits': 'Yatırım Miktarı',
+                        'withdrawal_count': 'Çekim Adedi',
+                        'total_withdrawals': 'Çekim Miktarı'
+                    })
+                    display_df['Net Miktar'] = display_df['Yatırım Miktarı'] - display_df['Çekim Miktarı']
+                    
+                    def highlight_totals(val):
+                        if val > 0:
+                            return 'background-color: lightgreen'
+                        elif val < 0:
+                            return 'background-color: lightcoral'
+                        else:
+                            return 'background-color: lightgray'
+                    
+                    styled_df = display_df.style.map(highlight_totals, subset=['Net Miktar'])
+                    styled_df = styled_df.format({
+                        'Yatırım Miktarı': '{:,.0f} TL',
+                        'Çekim Miktarı': '{:,.0f} TL',
+                        'Net Miktar': '{:,.0f} TL'
+                    })
+                    st.dataframe(styled_df, use_container_width=True)
+                    
+                    # Kayıt işlemi
+                    st.subheader("💾 Kayıt İşlemi")
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        selected_date = st.date_input(
+                            "📅 Kayıt Tarihi",
+                            value=datetime.now(),
+                            help="Verilerin hangi tarihe kaydedileceğini seçin"
+                        )
+                    
+                    with col2:
+                        if st.button("💾 Kaydet", type="primary"):
+                            success = data_processor.save_daily_data(
+                                processed_data,
+                                btag_input,
+                                selected_date
+                            )
+                            
+                            if success:
+                                st.success("✅ Veriler başarıyla kaydedildi!")
+                            else:
+                                st.error("❌ Kayıt sırasında hata oluştu!")
+                
+                else:
+                    st.warning(f"⚠️ BTag {btag_input} için veri bulunamadı.")
+            
+            else:
+                st.error("❌ Excel dosyasında 'BTag' sütunu bulunamadı!")
+        
+        except Exception as e:
+            st.error(f"❌ Dosya işlenirken hata oluştu: {str(e)}")
 
 def show_member_management():
     """Üye yönetimi sayfası"""
     st.header("👥 Üye Yönetimi")
     
-    tab1, tab2, tab3 = st.tabs(["👤 Tekil Üye Ekleme", "👥 Toplu Üye Ekleme", "📋 Üye Listesi"])
+    member_manager = MemberManager()
     
-    with tab1:
-        st.subheader("👤 Yeni Üye Ekle")
+    # Üye ekleme seçenekleri
+    with st.expander("➕ Üye Ekleme"):
+        tab1, tab2 = st.tabs(["Tekli Ekleme", "Toplu Ekleme"])
         
-        with st.form("add_member_form"):
-            col1, col2 = st.columns(2)
+        with tab1:
+            col1, col2, col3 = st.columns(3)
             
             with col1:
-                member_id = st.text_input("Üye ID", placeholder="123456789")
-                username = st.text_input("Kullanıcı Adı", placeholder="kullanici_adi")
-            
+                new_member_id = st.text_input("🆔 Üye ID")
             with col2:
-                full_name = st.text_input("Ad Soyad", placeholder="Ad Soyad")
-                
-            submitted = st.form_submit_button("➕ Üye Ekle")
+                new_username = st.text_input("👤 Kullanıcı Adı")
+            with col3:
+                new_fullname = st.text_input("📝 İsim Soyisim")
             
-            if submitted:
-                if member_id and Utils.validate_member_id(member_id):
-                    success = st.session_state.member_manager.add_member(
-                        member_id, username, full_name
-                    )
+            if st.button("➕ Üye Ekle"):
+                if new_member_id:
+                    success = member_manager.add_member(new_member_id, new_username, new_fullname)
                     if success:
-                        st.success(f"✅ Üye başarıyla eklendi: {member_id}")
+                        st.success("✅ Üye başarıyla eklendi!")
                         st.rerun()
                     else:
-                        st.error("❌ Üye eklenirken hata oluştu!")
+                        st.error("❌ Bu üye zaten mevcut!")
                 else:
-                    st.error("❌ Geçerli bir üye ID girin (en az 6 haneli)!")
-    
-    with tab2:
-        st.subheader("👥 Toplu Üye Ekleme")
+                    st.warning("⚠️ En az Üye ID alanını doldurun!")
         
-        # Excel dosyası yükleme
-        uploaded_file = st.file_uploader("Excel Dosyası Yükle", type=['xlsx', 'xls'])
-        
-        if uploaded_file:
-            try:
-                df = pd.read_excel(uploaded_file)
-                st.write("📊 Yüklenen Veri:")
-                st.dataframe(df.head())
-                
-                # Sütun seçimi
-                if not df.empty:
-                    id_column = st.selectbox("Üye ID Sütunu", df.columns)
-                    
-                    if st.button("📥 Excel'den Üye Ekle"):
-                        if id_column in df.columns:
-                            member_ids = df[id_column].dropna().astype(str).tolist()
-                            valid_ids = [mid for mid in member_ids if Utils.validate_member_id(mid)]
-                            
-                            if valid_ids:
-                                added_count = st.session_state.member_manager.add_members_bulk(valid_ids)
-                                st.success(f"✅ {added_count} üye başarıyla eklendi!")
-                                st.rerun()
-                            else:
-                                st.error("❌ Geçerli üye ID bulunamadı!")
+        with tab2:
+            st.write("Her satıra bir Üye ID girin:")
+            bulk_ids = st.text_area("Üye ID'leri", placeholder="303364529\n303340703\n303000951", height=150)
             
-            except Exception as e:
-                st.error(f"❌ Excel dosyası okuma hatası: {str(e)}")
-        
-        # Manuel ID listesi
-        st.markdown("**veya**")
-        
-        member_ids_text = st.text_area(
-            "Üye ID Listesi (her satıra bir ID)",
-            placeholder="123456789\n987654321\n456789123",
-            height=150
-        )
-        
-        if st.button("📝 Liste'den Üye Ekle"):
-            if member_ids_text:
-                member_ids = [mid.strip() for mid in member_ids_text.split('\n') if mid.strip()]
-                valid_ids = [mid for mid in member_ids if Utils.validate_member_id(mid)]
-                
-                if valid_ids:
-                    added_count = st.session_state.member_manager.add_members_bulk(valid_ids)
+            if st.button("➕ Toplu Ekle"):
+                if bulk_ids:
+                    id_list = bulk_ids.strip().split('\n')
+                    added_count = member_manager.add_members_bulk(id_list)
                     st.success(f"✅ {added_count} üye başarıyla eklendi!")
                     st.rerun()
                 else:
-                    st.error("❌ Geçerli üye ID bulunamadı!")
+                    st.warning("⚠️ Üye ID'leri girin!")
     
-    with tab3:
-        st.subheader("📋 Üye Listesi")
+    # Üye listesi
+    st.subheader("📋 Üye Listesi")
+    
+    members = member_manager.get_all_members()
+    if members:
+        search_term = st.text_input("🔍 Üye Ara", placeholder="İsim, kullanıcı adı veya ID ile ara...")
         
-        members = st.session_state.member_manager.get_all_members()
+        if search_term:
+            filtered_members = [
+                m for m in members 
+                if search_term.lower() in m['full_name'].lower() 
+                or search_term.lower() in m['username'].lower()
+                or search_term in str(m['member_id'])
+            ]
+        else:
+            filtered_members = members
         
-        if members:
-            # Filtreleme seçenekleri
-            col1, col2, col3 = st.columns(3)
+        # Üye tablosu
+        for i, member in enumerate(filtered_members):
+            # Ana satır
+            col1, col2, col3, col4, col5, col6 = st.columns([1, 2, 2, 1, 1, 1])
             
             with col1:
-                status_filter = st.selectbox("Durum Filtresi", ["Tümü", "Aktif", "Pasif"])
-            
+                st.write(f"🆔 {member['member_id']}")
             with col2:
-                days_filter = st.selectbox(
-                    "Yatırım Filtresi", 
-                    ["Tümü", "Son 7 gün", "Son 30 gün", "30+ gün"]
-                )
-            
+                st.write(f"👤 {member['username']}")
             with col3:
-                search_term = st.text_input("🔍 Arama", placeholder="Üye ID, kullanıcı adı...")
+                st.write(f"📝 {member['full_name']}")
+            with col4:
+                status = "✅ Aktif" if member.get('is_active', True) else "❌ Banlandı"
+                st.write(status)
+            with col5:
+                days_without = member.get('days_without_deposit', 0)
+                if days_without > 7:
+                    st.error(f"⚠️ {days_without} gün")
+                elif days_without > 0:
+                    st.warning(f"🟡 {days_without} gün")
+                else:
+                    st.success("🟢 Aktif")
+            with col6:
+                if member.get('is_active', True):
+                    if st.button(f"🚫 Ban", key=f"ban_{member['member_id']}"):
+                        member_manager.toggle_member_status(member['member_id'])
+                        st.success(f"Üye {member['username']} banlandı!")
+                        st.rerun()
+                else:
+                    if st.button(f"✅ Aktif", key=f"unban_{member['member_id']}"):
+                        member_manager.toggle_member_status(member['member_id'])
+                        st.success(f"Üye {member['username']} aktif edildi!")
+                        st.rerun()
             
-            # Filtreleme uygula
-            filtered_members = members.copy()
-            
-            if status_filter == "Aktif":
-                filtered_members = [m for m in filtered_members if m.get('days_without_deposit', 999) <= 7]
-            elif status_filter == "Pasif":
-                filtered_members = [m for m in filtered_members if m.get('days_without_deposit', 999) > 7]
-            
-            if days_filter == "Son 7 gün":
-                filtered_members = [m for m in filtered_members if m.get('days_without_deposit', 999) <= 7]
-            elif days_filter == "Son 30 gün":
-                filtered_members = [m for m in filtered_members if m.get('days_without_deposit', 999) <= 30]
-            elif days_filter == "30+ gün":
-                filtered_members = [m for m in filtered_members if m.get('days_without_deposit', 999) > 30]
-            
-            if search_term:
-                filtered_members = [
-                    m for m in filtered_members 
-                    if search_term.lower() in m.get('member_id', '').lower() or
-                       search_term.lower() in m.get('username', '').lower() or
-                       search_term.lower() in m.get('full_name', '').lower()
-                ]
-            
-            # Tablo gösterimi
-            if filtered_members:
-                # DataFrame oluştur
-                display_data = []
-                for member in filtered_members:
-                    display_data.append({
-                        'Üye ID': member.get('member_id', ''),
-                        'Kullanıcı Adı': member.get('username', ''),
-                        'Ad Soyad': member.get('full_name', ''),
-                        'Bakiye': Utils.format_currency(member.get('balance', 0)),
-                        'Son Yatırım': Utils.format_date(member.get('last_deposit_date')),
-                        'Yatırımsız Gün': member.get('days_without_deposit', 999),
-                        'Durum': '✅ Aktif' if member.get('days_without_deposit', 999) <= 7 else '❌ Pasif',
-                        'Oluşturma Tarihi': Utils.format_date(member.get('created_at'))
-                    })
-                
-                df_display = pd.DataFrame(display_data)
-                st.dataframe(df_display, use_container_width=True)
-                
-                st.info(f"📊 Toplam {len(filtered_members)} üye gösteriliyor")
-            else:
-                st.warning("⚠️ Filtre kriterlerine uygun üye bulunamadı")
-        else:
-            st.info("📝 Henüz üye eklenmemiş. Yukarıdaki sekmelerden üye ekleyebilirsiniz.")
+            # Detay bilgileri (API'den gelen)
+            if member.get('api_data') or member.get('email') or member.get('phone'):
+                with st.expander(f"📋 {member['username']} - Detay Bilgileri"):
+                    detail_col1, detail_col2, detail_col3 = st.columns(3)
+                    
+                    with detail_col1:
+                        st.write(f"📧 **Email:** {member.get('email', 'Bilinmiyor')}")
+                        st.write(f"📞 **Telefon:** {member.get('phone', 'Bilinmiyor')}")
+                        st.write(f"💰 **Bakiye:** {member.get('balance', 0)} {member.get('currency', 'TRY')}")
+                    
+                    with detail_col2:
+                        st.write(f"📅 **Kayıt Tarihi:** {member.get('registration_date', 'Bilinmiyor')}")
+                        st.write(f"🕐 **Son Giriş:** {member.get('last_login_date', 'Bilinmiyor')}")
+                        st.write(f"💳 **Son Yatırım:** {member.get('last_deposit_date', 'Bilinmiyor')}")
+                    
+                    with detail_col3:
+                        st.write(f"🎰 **Son Casino:** {member.get('last_casino_bet', 'Bilinmiyor')}")
+                        st.write(f"👥 **Partner:** {member.get('partner_name', 'Bilinmiyor')}")
+                        st.write(f"🎂 **Doğum Tarihi:** {member.get('birth_date', 'Bilinmiyor')}")
+                        
+                        # API verilerini güncelle butonu
+                        if st.button(f"🔄 API Güncelle", key=f"refresh_{member['member_id']}"):
+                            with st.spinner("API'den veriler çekiliyor..."):
+                                member_manager.fetch_member_api_data(member['member_id'])
+                            st.success("✅ API verileri güncellendi!")
+                            st.rerun()
+        
+        st.info(f"📊 Toplam {len(filtered_members)} üye gösteriliyor")
+    
+    else:
+        st.info("👥 Henüz üye bulunmuyor.")
 
 def show_reports():
     """Raporlar sayfası"""
-    st.header("📊 Raporlar")
+    st.header("📊 Detaylı Raporlar")
     
-    tab1, tab2, tab3 = st.tabs(["📊 Genel Rapor", "📁 Veri Yükleme", "📤 Veri Export"])
+    data_processor = DataProcessor()
+    member_manager = MemberManager()
     
-    with tab1:
-        st.subheader("📊 Genel Durum Raporu")
-        
-        members = st.session_state.member_manager.get_all_members()
-        daily_data = st.session_state.daily_data_manager.load_daily_data()
-        
-        if members:
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                st.metric("Toplam Üye", len(members))
-                active_count = len([m for m in members if m.get('is_active', True)])
-                st.metric("Aktif Üye", active_count)
-            
-            with col2:
-                total_balance = sum(m.get('balance', 0) for m in members)
-                st.metric("Toplam Bakiye", Utils.format_currency(total_balance))
-                
-                avg_balance = total_balance / len(members) if members else 0
-                st.metric("Ortalama Bakiye", Utils.format_currency(avg_balance))
-            
-            with col3:
-                recent_deposits = len([m for m in members if m.get('days_without_deposit', 999) <= 7])
-                st.metric("Son 7 Gün Aktif", recent_deposits)
-                
-                risk_members = len([m for m in members if m.get('days_without_deposit', 999) > 90])
-                st.metric("Risk Grubu (90+ gün)", risk_members)
-            
-            # Risk analizi
-            st.subheader("⚠️ Risk Analizi")
-            
-            risk_analysis = {
-                "Düşük Risk (0-7 gün)": len([m for m in members if m.get('days_without_deposit', 999) <= 7]),
-                "Orta Risk (8-30 gün)": len([m for m in members if 7 < m.get('days_without_deposit', 999) <= 30]),
-                "Yüksek Risk (31-90 gün)": len([m for m in members if 30 < m.get('days_without_deposit', 999) <= 90]),
-                "Çok Yüksek Risk (90+ gün)": len([m for m in members if m.get('days_without_deposit', 999) > 90])
-            }
-            
-            for risk_level, count in risk_analysis.items():
-                percentage = (count / len(members)) * 100 if members else 0
-                st.write(f"**{risk_level}**: {count} üye ({percentage:.1f}%)")
-        else:
-            st.info("📝 Rapor oluşturmak için önce üye eklemeniz gerekiyor.")
-    
-    with tab2:
-        st.subheader("📁 Excel Veri Yükleme")
-        
-        # Kullanım kılavuzu
-        with st.expander("📖 BTag Filtreleme Kılavuzu"):
-            st.markdown("""
-            **Excel'de BTag Filtreleme Nasıl Çalışır:**
-            
-            1. **BTag Sütunu Var İse:** 
-               - Excel'de 'BTag', 'B Tag', 'Tag' veya 'Btag' adında sütun olmalı
-               - Sistem sadece belirtilen BTag'a ait üyeleri işleyecek
-               - Örnek: BTag sütununda 'ABC123' değeri olan satırlar
-            
-            2. **BTag Sütunu Yok İse:**
-               - Tüm Excel verileri işlenir (filtreleme yapılmaz)
-               - Uyarı mesajı gösterilir
-            
-            **Önerilen Excel Formatı:**
-            | ID | Kullanıcı Adı | Müşteri Adı | BTag | Yatırımlar | Para Çekme |
-            |---|---|---|---|---|---|
-            | 12345 | user1 | Ali Veli | ABC123 | 1000 | 500 |
-            """)
-        
-        # BTag ID girişi
-        btag_id = st.text_input("BTag ID", placeholder="Örn: 2424878")
-        
-        # Tarih seçimi
-        selected_date = st.date_input("Veri Tarihi", datetime.now())
-        
-        # Excel dosya yükleme
-        uploaded_file = st.file_uploader(
-            "Excel Dosyası Seçin", 
-            type=['xlsx', 'xls'],
-            help="Üye verilerini içeren Excel dosyasını yükleyin"
-        )
-        
-        if uploaded_file and btag_id:
-            try:
-                # Excel dosyasını oku
-                df = pd.read_excel(uploaded_file)
-                st.success(f"✅ Dosya başarıyla okundu. {len(df)} satır veri bulundu.")
-                
-                # Veri önizlemesi
-                st.subheader("📋 Veri Önizlemesi")
-                st.dataframe(df.head(10))
-                
-                # Sütun bilgileri
-                st.write("**Sütunlar:**", ', '.join(df.columns.tolist()))
-                
-                # Veri işleme
-                data_processor = DataProcessor(st.session_state.github_manager)
-                
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    if st.button("💾 Veriyi İşle ve Kaydet", use_container_width=True):
-                        # BTag filtresi ile veriyi işle
-                        processed_df = data_processor.process_excel_data(df, btag_filter=btag_id)
-                        
-                        if processed_df is not None:
-                            # Yeni üyeleri kontrol et (sadece bu BTag'a ait olanlar)
-                            existing_members = st.session_state.member_manager.get_all_members()
-                            existing_ids = set(m.get('member_id', '') for m in existing_members)
-                            new_member_ids = []
-                            
-                            for _, row in processed_df.iterrows():
-                                member_id = str(row.get('member_id', ''))
-                                if member_id and member_id not in existing_ids:
-                                    new_member_ids.append(member_id)
-                            
-                            # Eğer yeni üyeler varsa kullanıcıya sor
-                            if new_member_ids:
-                                st.warning(f"⚠️ BTag '{btag_id}' için Excel'de {len(new_member_ids)} yeni üye bulundu!")
-                                st.write("**Yeni üyeler:**", ", ".join(new_member_ids[:10]))
-                                if len(new_member_ids) > 10:
-                                    st.write(f"...ve {len(new_member_ids) - 10} üye daha")
-                                
-                                add_new_members = st.checkbox(
-                                    f"Bu {len(new_member_ids)} yeni üyeyi '{btag_id}' BTag'ı için sisteme ekle",
-                                    value=True,
-                                    help=f"Excel'deki {btag_id} BTag'ına ait yeni üyeleri sisteme ekler"
-                                )
-                                
-                                if st.button("✅ Onayla ve Kaydet", type="primary"):
-                                    # Yeni üyeleri ekle (seçiliyse)
-                                    if add_new_members:
-                                        for _, row in processed_df.iterrows():
-                                            member_id = str(row.get('member_id', ''))
-                                            if member_id in new_member_ids:
-                                                username = row.get('username', '')
-                                                customer_name = row.get('customer_name', '')
-                                                st.session_state.member_manager.add_member(
-                                                    member_id, username, customer_name
-                                                )
-                                        st.success(f"✅ {len(new_member_ids)} yeni üye eklendi!")
-                                    
-                                    # Günlük veriyi kaydet
-                                    success = data_processor.save_daily_data(processed_df, btag_id, selected_date)
-                                    
-                                    if success:
-                                        st.success("✅ Veri başarıyla kaydedildi!")
-                                        
-                                        # İşlenmiş veriyi göster
-                                        st.subheader("✅ İşlenmiş Veri")
-                                        st.dataframe(processed_df)
-                                        
-                                        # GitHub sync (eğer bağlı ise)
-                                        if st.session_state.github_manager.connected:
-                                            st.session_state.github_manager.sync_file("daily_data.json")
-                                            if add_new_members:
-                                                st.session_state.github_manager.sync_file("members.json")
-                                            st.info("🔄 Veri GitHub'a senkronize edildi")
-                                    else:
-                                        st.error("❌ Veri kaydetme başarısız!")
-                            else:
-                                # Yeni üye yoksa direkt kaydet
-                                success = data_processor.save_daily_data(processed_df, btag_id, selected_date)
-                                
-                                if success:
-                                    st.success("✅ Veri başarıyla kaydedildi!")
-                                    
-                                    # İşlenmiş veriyi göster
-                                    st.subheader("✅ İşlenmiş Veri")
-                                    st.dataframe(processed_df)
-                                    
-                                    # GitHub sync (eğer bağlı ise)
-                                    if st.session_state.github_manager.connected:
-                                        st.session_state.github_manager.sync_file("daily_data.json")
-                                        st.info("🔄 Veri GitHub'a senkronize edildi")
-                                else:
-                                    st.error("❌ Veri kaydetme başarısız!")
-                
-                with col2:
-                    if st.button("🔍 Sadece Veri Analizi", use_container_width=True):
-                        # BTag filtresi ile veriyi analiz et
-                        processed_df = data_processor.process_excel_data(df, btag_filter=btag_id)
-                        
-                        if processed_df is not None:
-                            # Yeni üyeleri kontrol et (sadece bu BTag'a ait olanlar)
-                            existing_members = st.session_state.member_manager.get_all_members()
-                            existing_ids = set(m.get('member_id', '') for m in existing_members)
-                            new_member_ids = []
-                            
-                            for _, row in processed_df.iterrows():
-                                member_id = str(row.get('member_id', ''))
-                                if member_id and member_id not in existing_ids:
-                                    new_member_ids.append(member_id)
-                            
-                            # Yeni üye bilgisi göster
-                            if new_member_ids:
-                                st.info(f"ℹ️ BTag '{btag_id}' için Excel'de {len(new_member_ids)} yeni üye tespit edildi.")
-                            
-                            st.success("✅ Veri analizi tamamlandı!")
-                            
-                            # Analiz sonuçları
-                            st.subheader("📈 Veri Analizi")
-                            
-                            col_a, col_b, col_c = st.columns(3)
-                            
-                            with col_a:
-                                st.metric("Toplam Üye", len(processed_df))
-                                st.metric("Toplam Yatırım", Utils.format_currency(processed_df['total_deposits'].sum()))
-                                if new_member_ids:
-                                    st.metric("Yeni Üye Sayısı", len(new_member_ids))
-                            
-                            with col_b:
-                                st.metric("Toplam Çekim", Utils.format_currency(processed_df['total_withdrawals'].sum()))
-                                st.metric("Net Tutar", Utils.format_currency(processed_df['total_deposits'].sum() - processed_df['total_withdrawals'].sum()))
-                            
-                            with col_c:
-                                st.metric("Ortalama Yatırım", Utils.format_currency(processed_df['total_deposits'].mean()))
-                                active_depositors = len(processed_df[processed_df['total_deposits'] > 0])
-                                st.metric("Yatırım Yapan Üye", active_depositors)
-                            
-                            # Yeni üyeler listesi (varsa)
-                            if new_member_ids:
-                                st.subheader("🆕 Yeni Üyeler")
-                                st.write("**Yeni üye ID'leri:**", ", ".join(new_member_ids[:20]))
-                                if len(new_member_ids) > 20:
-                                    st.write(f"...ve {len(new_member_ids) - 20} üye daha")
-                            
-                            # İşlenmiş veriyi göster
-                            st.subheader("📋 İşlenmiş Veri")
-                            st.dataframe(processed_df)
-                            
-            except Exception as e:
-                st.error(f"❌ Dosya okuma hatası: {str(e)}")
-        
-        elif uploaded_file and not btag_id:
-            st.warning("⚠️ Lütfen BTag ID girin")
-        elif btag_id and not uploaded_file:
-            st.info("📁 Lütfen Excel dosyası yükleyin")
-    
-    with tab3:
-        st.subheader("📤 Veri Export")
-        
-        export_type = st.selectbox(
-            "Export Türü Seçin:",
-            ["Üye Listesi", "Günlük Veriler", "Tüm Veriler"]
-        )
-        
-        if export_type == "Üye Listesi":
-            members = st.session_state.member_manager.get_all_members()
-            
-            if members:
-                # DataFrame oluştur
-                export_data = []
-                for member in members:
-                    export_data.append({
-                        'Üye ID': member.get('member_id', ''),
-                        'Kullanıcı Adı': member.get('username', ''),
-                        'Ad Soyad': member.get('full_name', ''),
-                        'E-posta': member.get('email', ''),
-                        'Telefon': member.get('phone', ''),
-                        'Bakiye': member.get('balance', 0),
-                        'Para Birimi': member.get('currency', 'TRY'),
-                        'Toplam Yatırım': member.get('total_deposits', 0),
-                        'Toplam Çekim': member.get('total_withdrawals', 0),
-                        'Son Yatırım Tarihi': member.get('last_deposit_date', ''),
-                        'Yatırımsız Gün': member.get('days_without_deposit', 999),
-                        'Durum': 'Aktif' if member.get('is_active', True) else 'Pasif',
-                        'Oluşturma Tarihi': member.get('created_at', ''),
-                        'Son API Güncelleme': member.get('last_api_update', '')
-                    })
-                
-                df_export = pd.DataFrame(export_data)
-                
-                # Download butonu
-                if st.button("📥 Üye Listesi İndir (Excel)"):
-                    # Excel dosyası oluştur
-                    output = io.BytesIO()
-                    df_export.to_excel(output, engine='openpyxl', sheet_name='Üye Listesi', index=False)
-                    excel_data = output.getvalue()
-                    
-                    st.download_button(
-                        label="📁 Excel Dosyasını İndir",
-                        data=excel_data,
-                        file_name=f"uye_listesi_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    )
-                
-                # Önizleme
-                st.subheader("📋 Export Önizlemesi")
-                st.dataframe(df_export.head())
-                st.info(f"📊 Toplam {len(df_export)} satır export edilecek")
-            else:
-                st.info("📝 Export edilecek üye verisi bulunamadı")
-
-def show_analytics():
-    """Analizler sayfası"""
-    st.header("📈 Analizler")
-    
-    members = st.session_state.member_manager.get_all_members()
-    
-    if not members:
-        st.info("📝 Analiz için önce üye eklemeniz gerekiyor.")
+    # Günlük verileri yükle
+    try:
+        with open(data_processor.daily_data_file, 'r', encoding='utf-8') as f:
+            daily_data = json.load(f)
+    except:
+        daily_data = {}
+        st.warning("Henüz veri bulunmuyor.")
         return
     
-    tab1, tab2 = st.tabs(["📊 Üye Analizleri", "🎯 Performans Analizleri"])
+    if not daily_data:
+        st.info("Rapor oluşturmak için önce veri yüklemeniz gerekiyor.")
+        return
     
-    with tab1:
-        st.subheader("📊 Üye Davranış Analizleri")
-        
-        # Üye dağılım grafikleri
-        fig = st.session_state.visualization.create_member_distribution_charts(members)
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # En iyi üyeler
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("🏆 En Yüksek Bakiyeli Üyeler")
-            fig = st.session_state.visualization.create_top_members_chart(members, 'balance', 10)
-            st.plotly_chart(fig, use_container_width=True)
-        
-        with col2:
-            st.subheader("💰 En Çok Yatırım Yapan Üyeler")
-            fig = st.session_state.visualization.create_top_members_chart(members, 'total_deposits', 10)
-            st.plotly_chart(fig, use_container_width=True)
+    # Tarih aralığı seçimi
+    st.subheader("📅 Rapor Dönemi Seçin")
+    col1, col2 = st.columns(2)
     
-    with tab2:
-        st.subheader("🎯 Performans Göstergeleri")
-        
-        # KPI kartları
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            active_ratio = len([m for m in members if m.get('days_without_deposit', 999) <= 7]) / len(members) * 100
-            st.metric("Haftalık Aktivite Oranı", f"{active_ratio:.1f}%")
-        
-        with col2:
-            monthly_active = len([m for m in members if m.get('days_without_deposit', 999) <= 30]) / len(members) * 100
-            st.metric("Aylık Aktivite Oranı", f"{monthly_active:.1f}%")
-        
-        with col3:
-            total_balance = sum(m.get('balance', 0) for m in members)
-            avg_balance = total_balance / len(members)
-            st.metric("Ortalama Bakiye", Utils.format_currency(avg_balance))
-        
-        with col4:
-            risk_members = len([m for m in members if m.get('days_without_deposit', 999) > 90])
-            risk_ratio = risk_members / len(members) * 100
-            st.metric("Risk Oranı (90+ gün)", f"{risk_ratio:.1f}%")
-
-def show_settings():
-    """Ayarlar sayfası"""
-    st.header("🔧 Ayarlar")
+    available_dates = sorted(daily_data.keys())
+    min_date = datetime.strptime(available_dates[0], '%Y-%m-%d').date() if available_dates else datetime.now().date()
+    max_date = datetime.strptime(available_dates[-1], '%Y-%m-%d').date() if available_dates else datetime.now().date()
     
-    tab1, tab2, tab3 = st.tabs(["🔑 Token Ayarları", "🔧 Genel Ayarlar", "📊 Sistem Bilgileri"])
+    with col1:
+        start_date = st.date_input("Başlangıç Tarihi", value=min_date, min_value=min_date, max_value=max_date)
+    with col2:
+        end_date = st.date_input("Bitiş Tarihi", value=max_date, min_value=min_date, max_value=max_date)
     
-    with tab1:
-        st.subheader("🔑 API Token Ayarları")
+    # Rapor oluştur
+    if st.button("📋 Rapor Oluştur"):
+        st.markdown("---")
         
-        token_manager = st.session_state.token_manager
+        # Seçilen tarih aralığındaki verileri filtrele
+        filtered_data = []
+        total_deposits = 0
+        total_withdrawals = 0
+        member_summary = {}
         
-        # Mevcut token bilgileri
-        current_api_token = token_manager.get_api_token()
-        current_github_token = token_manager.get_github_token()
+        # Aktif üyelerin ID'lerini al
+        all_members = member_manager.get_all_members()
+        active_member_ids = [str(m['member_id']) for m in all_members if m.get('is_active', True)]
         
-        st.write("**Mevcut API Token:**", current_api_token[:10] + "..." if current_api_token else "Henüz ayarlanmamış")
-        st.write("**Mevcut GitHub Token:**", current_github_token[:15] + "..." if current_github_token else "Henüz ayarlanmamış")
+        for date_str in daily_data:
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+            if start_date <= date_obj <= end_date:
+                for btag, records in daily_data[date_str].items():
+                    for record in records:
+                        member_id = str(record.get('member_id', ''))
+                        # Sadece aktif üyelerin verilerini dahil et
+                        if member_id not in active_member_ids:
+                            continue
+                            
+                        deposits = record.get('total_deposits', 0)
+                        withdrawals = record.get('total_withdrawals', 0)
+                        deposit_count = record.get('deposit_count', 0)
+                        withdrawal_count = record.get('withdrawal_count', 0)
+                        
+                        filtered_data.append({
+                            'Tarih': date_str,
+                            'BTag': btag,
+                            'Üye ID': member_id,
+                            'Kullanıcı Adı': record.get('username', ''),
+                            'Müşteri Adı': record.get('customer_name', ''),
+                            'Yatırım Adedi': deposit_count,
+                            'Yatırım': deposits,
+                            'Çekim Adedi': withdrawal_count,
+                            'Çekim': withdrawals,
+                            'Net': deposits - withdrawals
+                        })
+                        
+                        total_deposits += deposits
+                        total_withdrawals += withdrawals
+                        
+                        # Üye bazında özet
+                        if member_id not in member_summary:
+                            member_summary[member_id] = {
+                                'username': record.get('username', ''),
+                                'customer_name': record.get('customer_name', ''),
+                                'deposits': 0,
+                                'withdrawals': 0,
+                                'deposit_count': 0,
+                                'withdrawal_count': 0
+                            }
+                        member_summary[member_id]['deposits'] += deposits
+                        member_summary[member_id]['withdrawals'] += withdrawals
+                        member_summary[member_id]['deposit_count'] += deposit_count
+                        member_summary[member_id]['withdrawal_count'] += withdrawal_count
         
-        # Token güncelleme
-        with st.form("token_update_form"):
-            new_api_token = st.text_input("Yeni API Token", type="password", placeholder="API token girin...")
-            new_github_token = st.text_input("Yeni GitHub Token", type="password", placeholder="GitHub PAT girin...")
+        if filtered_data:
+            total_net = total_deposits - total_withdrawals
             
-            if st.form_submit_button("🔄 Token'ları Güncelle"):
-                updated = False
-                
-                if new_api_token:
-                    tokens = token_manager.load_tokens()
-                    tokens['api_token'] = new_api_token
-                    token_manager.save_tokens(tokens)
-                    updated = True
-                
-                if new_github_token:
-                    tokens = token_manager.load_tokens()
-                    tokens['github_token'] = new_github_token
-                    token_manager.save_tokens(tokens)
-                    updated = True
-                
-                if updated:
-                    st.success("✅ Token'lar başarıyla güncellendi!")
-                    st.rerun()
+            # Genel özet
+            st.subheader("📈 Genel Özet")
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.metric("📅 Toplam Gün", (end_date - start_date).days + 1)
+            with col2:
+                st.metric("💰 Toplam Yatırım", f"{total_deposits:,.0f} TL")
+            with col3:
+                st.metric("💸 Toplam Çekim", f"{total_withdrawals:,.0f} TL")
+            with col4:
+                if total_net >= 0:
+                    st.metric("📈 Net Kar", f"{total_net:,.0f} TL", delta=None, delta_color="normal")
                 else:
-                    st.warning("⚠️ Güncellenecek token bulunamadı")
-    
-    with tab2:
-        st.subheader("🔧 Genel Ayarlar")
-        
-        # Otomatik sync ayarı
-        auto_sync = st.checkbox(
-            "🔄 Otomatik GitHub Senkronizasyonu", 
-            value=st.session_state.get('auto_sync_enabled', True),
-            help="Veriler kaydedildiğinde otomatik olarak GitHub'a senkronize et"
-        )
-        st.session_state.auto_sync_enabled = auto_sync
-        
-        # API çağrı limiti
-        api_timeout = st.slider("⏱️ API Zaman Aşımı (saniye)", 5, 60, 10)
-        st.session_state.api_timeout = api_timeout
-        
-        # Veri saklama süresi
-        data_retention = st.selectbox(
-            "📅 Veri Saklama Süresi",
-            ["30 gün", "60 gün", "90 gün", "6 ay", "1 yıl", "Sınırsız"],
-            index=2
-        )
-        st.session_state.data_retention = data_retention
-    
-    with tab3:
-        st.subheader("📊 Sistem Bilgileri")
-        
-        # Dosya boyutları
-        file_sizes = {}
-        for filename in ["members.json", "daily_data.json", "token.json"]:
-            if os.path.exists(filename):
-                size = os.path.getsize(filename)
-                file_sizes[filename] = f"{size:,} bytes"
-            else:
-                file_sizes[filename] = "Dosya bulunamadı"
-        
-        for filename, size in file_sizes.items():
-            st.write(f"**{filename}:** {size}")
-        
-        # Üye istatistikleri
-        members = st.session_state.member_manager.get_all_members()
-        st.write(f"**Toplam Üye Sayısı:** {len(members)}")
-        st.write(f"**Aktif Üye Sayısı:** {len([m for m in members if m.get('is_active', True)])}")
-        
-        # Günlük veri istatistikleri
-        daily_data = st.session_state.daily_data_manager.load_daily_data()
-        st.write(f"**Günlük Veri Kayıtları:** {len(daily_data)} gün")
-        
-        total_btags = set()
-        for date_data in daily_data.values():
-            total_btags.update(date_data.keys())
-        st.write(f"**Toplam BTag Sayısı:** {len(total_btags)}")
-
-def show_github_integration():
-    """GitHub entegrasyonu sayfası"""
-    st.header("🔗 GitHub Entegrasyonu")
-    
-    github_manager = st.session_state.github_manager
-    
-    # Bağlantı durumu
-    if github_manager.connected:
-        st.success(f"✅ GitHub'a bağlı: {github_manager.repo_name}")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            if st.button("🔄 Tüm Dosyaları Sync Et"):
-                files_to_sync = ["members.json", "daily_data.json", "token.json"]
-                success_count = 0
-                
-                for file_path in files_to_sync:
-                    if os.path.exists(file_path):
-                        if github_manager.sync_file(file_path):
-                            success_count += 1
-                
-                st.success(f"✅ {success_count} dosya başarıyla sync edildi!")
-        
-        with col2:
-            if st.button("🔧 Bağlantıyı Test Et"):
-                if github_manager.test_connection():
-                    st.success("✅ GitHub bağlantısı başarılı!")
-                else:
-                    st.error("❌ GitHub bağlantı testi başarısız!")
-        
-        # Son sync bilgileri
-        st.subheader("📊 Sync Durumu")
-        
-        sync_status = []
-        for filename in ["members.json", "daily_data.json", "token.json"]:
-            if os.path.exists(filename):
-                mod_time = datetime.fromtimestamp(os.path.getmtime(filename))
-                sync_status.append({
-                    'Dosya': filename,
-                    'Son Değişiklik': mod_time.strftime('%d.%m.%Y %H:%M:%S'),
-                    'Boyut': f"{os.path.getsize(filename):,} bytes"
+                    st.metric("📉 Net Zarar", f"{abs(total_net):,.0f} TL", delta=None, delta_color="inverse")
+            
+            # Grafik - Günlük trend
+            st.subheader("📊 Günlük Trend")
+            df_daily = pd.DataFrame(filtered_data)
+            daily_summary = df_daily.groupby('Tarih').agg({
+                'Yatırım': 'sum',
+                'Çekim': 'sum'
+            }).reset_index()
+            daily_summary['Net'] = daily_summary['Yatırım'] - daily_summary['Çekim']
+            
+            fig = px.line(daily_summary, x='Tarih', y=['Yatırım', 'Çekim'], 
+                         title='Günlük Yatırım-Çekim Trendi',
+                         color_discrete_map={'Yatırım': 'green', 'Çekim': 'red'})
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Üye bazında özet
+            st.subheader("👥 Üye Bazında Özet")
+            member_report = []
+            for member_id, data in member_summary.items():
+                net = data['deposits'] - data['withdrawals']
+                member_report.append({
+                    'Üye ID': member_id,
+                    'Kullanıcı Adı': data['username'],
+                    'Müşteri Adı': data['customer_name'],
+                    'Yatırım Adedi': data['deposit_count'],
+                    'Yatırım Miktarı': data['deposits'],
+                    'Çekim Adedi': data['withdrawal_count'],
+                    'Çekim Miktarı': data['withdrawals'],
+                    'Net': net
                 })
-        
-        if sync_status:
-            df_sync = pd.DataFrame(sync_status)
-            st.dataframe(df_sync, use_container_width=True)
-    
-    else:
-        st.warning("⚠️ GitHub'a bağlı değilsiniz")
-        
-        # Bağlantı formu
-        with st.form("github_connect_form"):
-            st.subheader("🔗 GitHub Repository Bağlantısı")
             
-            repo_url = st.text_input(
-                "Repository URL", 
-                placeholder="https://github.com/kullanici/repo-adi",
-                help="GitHub repository URL'sini girin"
+            df_members = pd.DataFrame(member_report)
+            df_members = df_members.sort_values('Net', ascending=False)
+            
+            # Renk kodlaması
+            def highlight_net(val):
+                color = 'background-color: lightgreen' if val > 0 else 'background-color: lightcoral' if val < 0 else 'background-color: lightgray'
+                return color
+            
+            styled_members = df_members.style.map(highlight_net, subset=['Net'])
+            styled_members = styled_members.format({
+                'Yatırım Miktarı': '{:,.0f} TL',
+                'Çekim Miktarı': '{:,.0f} TL',
+                'Net': '{:,.0f} TL'
+            })
+            st.dataframe(styled_members, use_container_width=True)
+            
+            # Excel indirme
+            st.subheader("📥 Raporu İndir")
+            
+            # Excel dosyası oluştur
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                # Genel özet
+                summary_data = {
+                    'Metrik': ['Toplam Gün', 'Toplam Yatırım', 'Toplam Çekim', 'Net Kar/Zarar'],
+                    'Değer': [
+                        (end_date - start_date).days + 1,
+                        f"{total_deposits:,.0f} TL",
+                        f"{total_withdrawals:,.0f} TL",
+                        f"{total_net:,.0f} TL"
+                    ]
+                }
+                pd.DataFrame(summary_data).to_excel(writer, sheet_name='Özet', index=False)
+                
+                # Günlük detay
+                df_daily_detail = pd.DataFrame(filtered_data)
+                df_daily_detail.to_excel(writer, sheet_name='Günlük Detay', index=False)
+                
+                # Üye bazında
+                df_members.to_excel(writer, sheet_name='Üye Bazında', index=False)
+            
+            output.seek(0)
+            
+            st.download_button(
+                label="📊 Excel Raporu İndir",
+                data=output.read(),
+                file_name=f"btag_raporu_{start_date}_{end_date}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
             
-            if st.form_submit_button("🔗 Bağlan"):
-                if repo_url:
-                    success = github_manager.connect_repository(repo_url)
-                    if success:
-                        st.success("✅ GitHub'a başarıyla bağlandı!")
-                        st.rerun()
-                    else:
-                        st.error("❌ GitHub bağlantısı başarısız! Token ve repository URL'sini kontrol edin.")
-                else:
-                    st.error("❌ Lütfen repository URL'si girin!")
+        else:
+            st.warning("Seçilen tarih aralığında veri bulunamadı.")
+
+def show_statistics():
+    """İstatistik sayfası"""
+    st.header("📊 Detaylı İstatistikler")
+    
+    data_processor = DataProcessor()
+    member_manager = MemberManager()
+    
+    # Verileri yükle
+    try:
+        with open(data_processor.daily_data_file, 'r', encoding='utf-8') as f:
+            daily_data = json.load(f)
+    except:
+        daily_data = {}
+    
+    if not daily_data:
+        st.warning("⚠️ Henüz veri bulunmuyor. Önce Excel dosyası yükleyin.")
+        return
+    
+    # Tarih aralığı seçimi
+    st.subheader("📅 Tarih Aralığı Seçin")
+    col1, col2 = st.columns(2)
+    
+    available_dates = sorted(daily_data.keys())
+    if available_dates:
+        with col1:
+            start_date = st.date_input(
+                "Başlangıç Tarihi",
+                value=datetime.strptime(available_dates[0], '%Y-%m-%d').date()
+            )
+        with col2:
+            end_date = st.date_input(
+                "Bitiş Tarihi", 
+                value=datetime.strptime(available_dates[-1], '%Y-%m-%d').date()
+            )
+    else:
+        st.error("Veri bulunamadı")
+        return
+    
+    # Veri toplama
+    member_stats = {}
+    total_deposits = 0
+    total_withdrawals = 0
+    total_deposit_count = 0
+    total_withdrawal_count = 0
+    
+    for date_str, btag_data in daily_data.items():
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+        
+        if start_date <= date_obj <= end_date:
+            for btag, records in btag_data.items():
+                for record in records:
+                    member_id = str(record.get('member_id', ''))
+                    username = record.get('username', '')
+                    customer_name = record.get('customer_name', '')
+                    deposit_count = record.get('deposit_count', 0)
+                    deposit_amount = record.get('total_deposits', 0)
+                    withdrawal_count = record.get('withdrawal_count', 0)
+                    withdrawal_amount = record.get('total_withdrawals', 0)
+                    
+                    if member_id not in member_stats:
+                        member_stats[member_id] = {
+                            'username': username,
+                            'customer_name': customer_name,
+                            'total_deposits': 0,
+                            'total_withdrawals': 0,
+                            'deposit_count': 0,
+                            'withdrawal_count': 0,
+                            'net_amount': 0,
+                            'days_active': 0
+                        }
+                    
+                    member_stats[member_id]['total_deposits'] += deposit_amount
+                    member_stats[member_id]['total_withdrawals'] += withdrawal_amount
+                    member_stats[member_id]['deposit_count'] += deposit_count
+                    member_stats[member_id]['withdrawal_count'] += withdrawal_count
+                    member_stats[member_id]['days_active'] += 1
+                    
+                    total_deposits += deposit_amount
+                    total_withdrawals += withdrawal_amount
+                    total_deposit_count += deposit_count
+                    total_withdrawal_count += withdrawal_count
+    
+    # Net miktarları hesapla
+    for member_id in member_stats:
+        member_stats[member_id]['net_amount'] = (
+            member_stats[member_id]['total_deposits'] - 
+            member_stats[member_id]['total_withdrawals']
+        )
+    
+    # Genel özet metrikleri
+    st.subheader("📈 Genel Özet")
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("💰 Toplam Yatırım", f"{total_deposits:,.0f} TL")
+        st.metric("🔢 Yatırım Adedi", f"{total_deposit_count:,}")
+    
+    with col2:
+        st.metric("💸 Toplam Çekim", f"{total_withdrawals:,.0f} TL")
+        st.metric("🔢 Çekim Adedi", f"{total_withdrawal_count:,}")
+    
+    with col3:
+        net_total = total_deposits - total_withdrawals
+        st.metric("📊 Net Kar/Zarar", f"{net_total:,.0f} TL")
+        if total_deposit_count > 0:
+            avg_deposit = total_deposits / total_deposit_count
+            st.metric("📊 Ort. Yatırım", f"{avg_deposit:,.0f} TL")
+    
+    with col4:
+        total_members = len(member_stats)
+        st.metric("👥 Aktif Üye", total_members)
+        if total_withdrawal_count > 0:
+            avg_withdrawal = total_withdrawals / total_withdrawal_count
+            st.metric("📊 Ort. Çekim", f"{avg_withdrawal:,.0f} TL")
+    
+    st.markdown("---")
+    
+    # En iyi performans gösteren üyeler
+    st.subheader("🏆 Top Performans")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.write("**💰 En Çok Yatırım Yapan Üyeler**")
+        top_deposits = sorted(member_stats.items(), 
+                            key=lambda x: x[1]['total_deposits'], reverse=True)[:10]
+        
+        top_deposits_data = []
+        for member_id, stats in top_deposits:
+            if stats['total_deposits'] > 0:
+                top_deposits_data.append({
+                    'Sıra': len(top_deposits_data) + 1,
+                    'Kullanıcı Adı': stats['username'],
+                    'Müşteri Adı': stats['customer_name'],
+                    'Yatırım Miktarı': f"{stats['total_deposits']:,.0f} TL",
+                    'Yatırım Adedi': stats['deposit_count']
+                })
+        
+        if top_deposits_data:
+            st.dataframe(pd.DataFrame(top_deposits_data), use_container_width=True)
+        
+        st.write("**🔢 En Sık Yatırım Yapan Üyeler**")
+        top_deposit_count = sorted(member_stats.items(), 
+                                 key=lambda x: x[1]['deposit_count'], reverse=True)[:10]
+        
+        top_count_data = []
+        for member_id, stats in top_deposit_count:
+            if stats['deposit_count'] > 0:
+                top_count_data.append({
+                    'Sıra': len(top_count_data) + 1,
+                    'Kullanıcı Adı': stats['username'],
+                    'Müşteri Adı': stats['customer_name'],
+                    'Yatırım Adedi': stats['deposit_count'],
+                    'Toplam Miktar': f"{stats['total_deposits']:,.0f} TL"
+                })
+        
+        if top_count_data:
+            st.dataframe(pd.DataFrame(top_count_data), use_container_width=True)
+    
+    with col2:
+        st.write("**💸 En Çok Çekim Yapan Üyeler**")
+        top_withdrawals = sorted(member_stats.items(), 
+                               key=lambda x: x[1]['total_withdrawals'], reverse=True)[:10]
+        
+        top_withdrawals_data = []
+        for member_id, stats in top_withdrawals:
+            if stats['total_withdrawals'] > 0:
+                top_withdrawals_data.append({
+                    'Sıra': len(top_withdrawals_data) + 1,
+                    'Kullanıcı Adı': stats['username'],
+                    'Müşteri Adı': stats['customer_name'],
+                    'Çekim Miktarı': f"{stats['total_withdrawals']:,.0f} TL",
+                    'Çekim Adedi': stats['withdrawal_count']
+                })
+        
+        if top_withdrawals_data:
+            st.dataframe(pd.DataFrame(top_withdrawals_data), use_container_width=True)
+        
+        st.write("**📈 En Karlı Üyeler**")
+        top_profitable = sorted(member_stats.items(), 
+                              key=lambda x: x[1]['net_amount'], reverse=True)[:10]
+        
+        top_profit_data = []
+        for member_id, stats in top_profitable:
+            if stats['net_amount'] != 0:
+                top_profit_data.append({
+                    'Sıra': len(top_profit_data) + 1,
+                    'Kullanıcı Adı': stats['username'],
+                    'Müşteri Adı': stats['customer_name'],
+                    'Net Kar': f"{stats['net_amount']:,.0f} TL",
+                    'Yatırım': f"{stats['total_deposits']:,.0f} TL"
+                })
+        
+        if top_profit_data:
+            st.dataframe(pd.DataFrame(top_profit_data), use_container_width=True)
+    
+    st.markdown("---")
+    
+    # Grafik analizler
+    st.subheader("📊 Grafik Analizleri")
+    
+    tab1, tab2, tab3 = st.tabs(["Dağılım Analizi", "Trend Analizi", "Karşılaştırma"])
+    
+    with tab1:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Yatırım miktarı dağılımı
+            deposit_amounts = [stats['total_deposits'] for stats in member_stats.values() if stats['total_deposits'] > 0]
+            if deposit_amounts:
+                fig = px.histogram(x=deposit_amounts, nbins=20, 
+                                 title='Yatırım Miktarı Dağılımı',
+                                 labels={'x': 'Yatırım Miktarı (TL)', 'y': 'Üye Sayısı'})
+                st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            # Çekim miktarı dağılımı
+            withdrawal_amounts = [stats['total_withdrawals'] for stats in member_stats.values() if stats['total_withdrawals'] > 0]
+            if withdrawal_amounts:
+                fig = px.histogram(x=withdrawal_amounts, nbins=20,
+                                 title='Çekim Miktarı Dağılımı',
+                                 labels={'x': 'Çekim Miktarı (TL)', 'y': 'Üye Sayısı'})
+                st.plotly_chart(fig, use_container_width=True)
+    
+    with tab2:
+        # Günlük trend analizi
+        daily_summary = {}
+        for date_str, btag_data in daily_data.items():
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+            
+            if start_date <= date_obj <= end_date:
+                daily_deposits = 0
+                daily_withdrawals = 0
+                daily_dep_count = 0
+                daily_with_count = 0
+                
+                for btag, records in btag_data.items():
+                    for record in records:
+                        daily_deposits += record.get('total_deposits', 0)
+                        daily_withdrawals += record.get('total_withdrawals', 0)
+                        daily_dep_count += record.get('deposit_count', 0)
+                        daily_with_count += record.get('withdrawal_count', 0)
+                
+                daily_summary[date_str] = {
+                    'Yatırım Miktarı': daily_deposits,
+                    'Çekim Miktarı': daily_withdrawals,
+                    'Yatırım Adedi': daily_dep_count,
+                    'Çekim Adedi': daily_with_count
+                }
+        
+        if daily_summary:
+            df_trend = pd.DataFrame(daily_summary).T
+            df_trend.index = pd.to_datetime(df_trend.index)
+            
+            # Miktar trendi
+            fig = px.line(df_trend, y=['Yatırım Miktarı', 'Çekim Miktarı'],
+                         title='Günlük Miktar Trendi',
+                         color_discrete_map={'Yatırım Miktarı': 'green', 'Çekim Miktarı': 'red'})
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Adet trendi
+            fig = px.line(df_trend, y=['Yatırım Adedi', 'Çekim Adedi'],
+                         title='Günlük İşlem Adedi Trendi',
+                         color_discrete_map={'Yatırım Adedi': 'blue', 'Çekim Adedi': 'orange'})
+            st.plotly_chart(fig, use_container_width=True)
+    
+    with tab3:
+        # Yatırım vs Çekim karşılaştırması
+        member_comparison = []
+        for member_id, stats in member_stats.items():
+            if stats['total_deposits'] > 0 or stats['total_withdrawals'] > 0:
+                member_comparison.append({
+                    'Kullanıcı Adı': stats['username'],
+                    'Yatırım Miktarı': stats['total_deposits'],
+                    'Çekim Miktarı': stats['total_withdrawals'],
+                    'Yatırım Adedi': stats['deposit_count'],
+                    'Çekim Adedi': stats['withdrawal_count']
+                })
+        
+        if member_comparison:
+            df_comparison = pd.DataFrame(member_comparison)
+            
+            # Miktar karşılaştırması
+            fig = px.scatter(df_comparison, x='Yatırım Miktarı', y='Çekim Miktarı',
+                           hover_data=['Kullanıcı Adı'],
+                           title='Yatırım vs Çekim Miktarı Karşılaştırması')
+            # Eşit çizgi ekle
+            max_val = max(df_comparison['Yatırım Miktarı'].max(), df_comparison['Çekim Miktarı'].max())
+            fig.add_shape(type="line", x0=0, y0=0, x1=max_val, y1=max_val, 
+                         line=dict(color="red", dash="dash"))
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Adet karşılaştırması
+            fig = px.scatter(df_comparison, x='Yatırım Adedi', y='Çekim Adedi',
+                           hover_data=['Kullanıcı Adı'],
+                           title='Yatırım vs Çekim Adedi Karşılaştırması')
+            st.plotly_chart(fig, use_container_width=True)
+
+def main():
+    """Ana uygulama fonksiyonu"""
+    st.title("📊 BTag Affiliate Takip Sistemi")
+    st.markdown("---")
+    
+    # Üst sekmeler
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+        "🏠 Ana Sayfa", 
+        "📤 Excel Yükleme", 
+        "👥 Üye Yönetimi", 
+        "📋 Raporlar", 
+        "📊 İstatistikler", 
+        "⚙️ Ayarlar"
+    ])
+    
+    with tab1:
+        show_dashboard()
+    
+    with tab2:
+        show_excel_upload()
+    
+    with tab3:
+        show_member_management()
+    
+    with tab4:
+        show_reports()
+    
+    with tab5:
+        show_statistics()
+    
+    with tab6:
+        show_settings()
 
 if __name__ == "__main__":
     main()
