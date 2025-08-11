@@ -16,7 +16,7 @@ class GitHubSync:
     """GitHub ile otomatik senkronizasyon sınıfı"""
     
     def __init__(self):
-        self.token = "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"
+        self.token = "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"
         self.repo_name = "Saxblue/newsoldier"
         self.branch = "main"
         
@@ -173,3 +173,4 @@ class GitHubSync:
         except Exception as e:
             st.error(f"Repository bilgisi alınamadı: {str(e)}")
             return None
+
