@@ -1,8 +1,8 @@
-import os
-import json
-import base64
-from datetime import datetime
 import streamlit as st
+import json
+import os
+import requests
+from datetime import datetime
 
 # GitHub kütüphanesini opsiyonel olarak import et
 try:
@@ -16,7 +16,8 @@ class GitHubSync:
     """GitHub ile otomatik senkronizasyon sınıfı"""
     
     def __init__(self):
-        self.token = "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"
+        # Token'ı uzak JSON dosyasından yükle
+        self.token = self._load_token_from_remote()
         self.repo_name = "Saxblue/newsoldier"
         self.branch = "main"
         
@@ -32,6 +33,31 @@ class GitHubSync:
         except Exception as e:
             # GitHub bağlantı hatası - sessizce devre dışı bırak
             self.sync_enabled = False
+    
+    def _load_token_from_remote(self):
+        """Uzak JSON dosyasından token'ı yükle"""
+        try:
+            # Uzak JSON dosyasından token'ı çek
+            token_url = "https://raw.githubusercontent.com/Saxblue/newsoldier/refs/heads/main/dr.json"
+            response = requests.get(token_url, timeout=10)
+            
+            if response.status_code == 200:
+                token_data = response.json()
+                # JSON'dan token'ı al (farklı key'ler deneyebiliriz)
+                token = token_data.get('github_token') or token_data.get('token') or token_data.get('access_token')
+                if token:
+                    return token
+                else:
+                    # JSON'da token bulunamadı, tüm key'leri kontrol et
+                    for key, value in token_data.items():
+                        if 'token' in key.lower() or key.lower() in ['pat', 'access', 'github']:
+                            return value
+            
+        except Exception as e:
+            # Uzak token yüklenemedi, fallback yok - sessizce None döndür
+            pass
+        
+        return None
     
     def upload_file(self, file_path, content, commit_message=None):
         """Dosyayı GitHub'a yükle veya güncelle"""
@@ -173,5 +199,3 @@ class GitHubSync:
         except Exception as e:
             st.error(f"Repository bilgisi alınamadı: {str(e)}")
             return None
-
-
