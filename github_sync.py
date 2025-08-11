@@ -2,8 +2,15 @@ import os
 import json
 import base64
 from datetime import datetime
-from github import Github
 import streamlit as st
+
+# GitHub kütüphanesini opsiyonel olarak import et
+try:
+    from github import Github
+    GITHUB_AVAILABLE = True
+except ImportError:
+    GITHUB_AVAILABLE = False
+    st.warning("⚠️ GitHub kütüphanesi bulunamadı. requirements.txt dosyasını GitHub'a yükleyin.")
 
 class GitHubSync:
     """GitHub ile otomatik senkronizasyon sınıfı"""
@@ -12,6 +19,11 @@ class GitHubSync:
         self.token = "github_pat_11BMEQ2VY0f5J2EtagPoAO_CrE9MXpS0F4aOxnUKyAr5VFTGS6n0qTtgcYVMEJnIlGZX6BFN7iaCRgDmj"
         self.repo_name = "Saxblue/newsoldier"
         self.branch = "main"
+        
+        if not GITHUB_AVAILABLE:
+            st.info("📦 GitHub senkronizasyonu için PyGithub kütüphanesi gerekli. requirements.txt dosyasını GitHub'a yükleyin.")
+            self.sync_enabled = False
+            return
         
         try:
             self.github = Github(self.token)
