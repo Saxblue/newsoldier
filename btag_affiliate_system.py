@@ -8,7 +8,16 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from io import BytesIO
-from github_sync import GitHubSync
+# GitHub sync'i opsiyonel olarak import et
+try:
+    from github_sync import GitHubSync
+    GITHUB_SYNC_AVAILABLE = True
+except ImportError:
+    GITHUB_SYNC_AVAILABLE = False
+    class GitHubSync:
+        """Dummy GitHub sync class when not available"""
+        def __init__(self):
+            self.sync_enabled = False
 
 # Streamlit sayfa konfigürasyonu
 st.set_page_config(
@@ -82,7 +91,7 @@ class DataProcessor:
     def __init__(self):
         self.daily_data_file = "daily_data.json"
         self.members_file = "members.json"
-        self.github_sync = GitHubSync()
+        self.github_sync = GitHubSync() if GITHUB_SYNC_AVAILABLE else None
         self.ensure_data_files()
     
     def ensure_data_files(self):
@@ -149,7 +158,7 @@ class DataProcessor:
                 json.dump(daily_data, f, ensure_ascii=False, indent=2)
             
             # Otomatik GitHub senkronizasyonu
-            if self.github_sync.sync_enabled:
+            if self.github_sync and self.github_sync.sync_enabled:
                 with st.spinner("GitHub'a senkronize ediliyor..."):
                     sync_success = self.github_sync.sync_json_file(self.daily_data_file)
                     if sync_success:
@@ -166,7 +175,7 @@ class MemberManager:
         self.members_file = "members.json"
         self.ensure_members_file()
         self.token_manager = TokenManager()
-        self.github_sync = GitHubSync()
+        self.github_sync = GitHubSync() if GITHUB_SYNC_AVAILABLE else None
     
     def ensure_members_file(self):
         """Üye dosyasını oluştur"""
@@ -443,11 +452,16 @@ def show_settings():
     with tab2:
         st.subheader("🔄 GitHub Otomatik Senkronizasyon")
         
+        if not GITHUB_SYNC_AVAILABLE:
+            st.warning("⚠️ GitHub senkronizasyon modülü bulunamadı!")
+            st.info("📦 GitHub özelliklerini kullanmak için requirements.txt dosyasını GitHub'a yükleyin.")
+            return
+        
         # GitHub Sync nesnesi oluştur
         github_sync = GitHubSync()
         
         # Repository bilgilerini göster
-        repo_info = github_sync.get_repo_info()
+        repo_info = github_sync.get_repo_info() if github_sync.sync_enabled else None
         if repo_info:
             st.success("✅ GitHub bağlantısı başarılı!")
             
