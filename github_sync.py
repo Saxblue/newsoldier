@@ -16,7 +16,7 @@ class GitHubSync:
     """GitHub ile otomatik senkronizasyon sınıfı"""
     
     def __init__(self):
-        self.token = "github_pat_11BMEQ2VY0f5J2EtagPoAO_CrE9MXpS0F4aOxnUKyAr5VFTGS6n0qTtgcYVMEJnIlGZX6BFN7iaCRgDmj"
+        self.token = "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"
         self.repo_name = "Saxblue/newsoldier"
         self.branch = "main"
         
