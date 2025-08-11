@@ -10,7 +10,7 @@ try:
     GITHUB_AVAILABLE = True
 except ImportError:
     GITHUB_AVAILABLE = False
-    st.warning("⚠️ GitHub kütüphanesi bulunamadı. requirements.txt dosyasını GitHub'a yükleyin.")
+    # Import sırasında uyarı gösterme - sadece kullanım sırasında göster
 
 class GitHubSync:
     """GitHub ile otomatik senkronizasyon sınıfı"""
@@ -21,7 +21,7 @@ class GitHubSync:
         self.branch = "main"
         
         if not GITHUB_AVAILABLE:
-            st.info("📦 GitHub senkronizasyonu için PyGithub kütüphanesi gerekli. requirements.txt dosyasını GitHub'a yükleyin.")
+            # PyGithub kütüphanesi mevcut değil - sessizce devre dışı bırak
             self.sync_enabled = False
             return
         
@@ -30,7 +30,7 @@ class GitHubSync:
             self.repo = self.github.get_repo(self.repo_name)
             self.sync_enabled = True
         except Exception as e:
-            st.error(f"GitHub bağlantı hatası: {str(e)}")
+            # GitHub bağlantı hatası - sessizce devre dışı bırak
             self.sync_enabled = False
     
     def upload_file(self, file_path, content, commit_message=None):
