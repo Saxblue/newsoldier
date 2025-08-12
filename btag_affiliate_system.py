@@ -4,6 +4,13 @@ import json
 import os
 import requests
 from datetime import datetime, timedelta
+
+def clear_streamlit_cache():
+    """Streamlit cache'ini temizle"""
+    if hasattr(st, 'cache_data'):
+        st.cache_data.clear()
+    if hasattr(st, 'cache_resource'):
+        st.cache_resource.clear()
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
