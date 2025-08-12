@@ -7133,5 +7133,15 @@
     "last_login_date": "2025-08-12T13:51:57.443",
     "partner_name": "Salamisbahis-18756287",
     "birth_date": "1988-12-01T00:00:00"
+  },
+  {
+    "member_id": "307676390",
+    "username": "benidze0808",
+    "full_name": "benidze Mzevinar",
+    "is_active": true,
+    "created_at": "2025-08-13T00:13:18.589724",
+    "last_deposit_date": null,
+    "days_without_deposit": 0,
+    "api_data": {}
   }
 ]
