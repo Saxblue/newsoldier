@@ -8,16 +8,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from io import BytesIO
-# GitHub sync'i opsiyonel olarak import et
-try:
-    from github_sync import GitHubSync
-    GITHUB_SYNC_AVAILABLE = True
-except ImportError:
-    GITHUB_SYNC_AVAILABLE = False
-    class GitHubSync:
-        """Dummy GitHub sync class when not available"""
-        def __init__(self):
-            self.sync_enabled = False
+import base64
 
 # Streamlit sayfa konfigürasyonu
 st.set_page_config(
@@ -47,10 +38,87 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+class GitHubSync:
+    """GitHub senkronizasyon sınıfı"""
+    def __init__(self):
+        self.github_repo = "Saxblue/newsoldier"
+        self.github_branch = "main"
+        self.github_api_url = "https://api.github.com"
+        
+    def get_github_token(self):
+        """GitHub token'ını al"""
+        try:
+            # Önce ayrı github_token.json dosyasından dene
+            if os.path.exists("github_token.json"):
+                with open("github_token.json", 'r', encoding='utf-8') as f:
+                    token_data = json.load(f)
+                    return token_data.get("github_token", "")
+            
+            # Yoksa token.json'dan dene (geriye uyumluluk)
+            with open("token.json", 'r', encoding='utf-8') as f:
+                token_data = json.load(f)
+                return token_data.get("github_token", "")
+        except:
+            return ""
+    
+    def upload_to_github(self, file_path, content, commit_message="Update data"):
+        """Dosyayı GitHub'a yükle"""
+        token = self.get_github_token()
+        if not token:
+            return False, "GitHub token bulunamadı"
+        
+        try:
+            # Mevcut dosyayı kontrol et
+            url = f"{self.github_api_url}/repos/{self.github_repo}/contents/{file_path}"
+            headers = {
+                "Authorization": f"token {token}",
+                "Accept": "application/vnd.github.v3+json"
+            }
+            
+            response = requests.get(url, headers=headers)
+            sha = None
+            if response.status_code == 200:
+                sha = response.json().get("sha")
+            
+            # Dosya içeriğini base64'e çevir
+            content_encoded = base64.b64encode(content.encode('utf-8')).decode('utf-8')
+            
+            # Dosyayı güncelle/oluştur
+            data = {
+                "message": commit_message,
+                "content": content_encoded,
+                "branch": self.github_branch
+            }
+            
+            if sha:
+                data["sha"] = sha
+            
+            response = requests.put(url, headers=headers, json=data)
+            
+            if response.status_code in [200, 201]:
+                return True, "Başarıyla yüklendi"
+            else:
+                return False, f"GitHub API hatası: {response.status_code}"
+                
+        except Exception as e:
+            return False, f"GitHub yükleme hatası: {str(e)}"
+    
+    def sync_json_file(self, local_file, github_file):
+        """JSON dosyasını GitHub ile senkronize et"""
+        try:
+            with open(local_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            success, message = self.upload_to_github(github_file, content, f"Update {github_file}")
+            return success, message
+        except Exception as e:
+            return False, f"Dosya okuma hatası: {str(e)}"
+
 class TokenManager:
     """Token yönetimi için sınıf"""
     def __init__(self):
         self.token_file = "token.json"
+        self.github_sync = GitHubSync()
         self.ensure_token_file()
     
     def ensure_token_file(self):
@@ -58,6 +126,7 @@ class TokenManager:
         if not os.path.exists(self.token_file):
             default_token = {
                 "token": "",
+                "github_token": "",
                 "api_url": "https://backofficewebadmin.betconstruct.com/api/tr/Client/GetClientWithdrawalRequestsWithTotals"
             }
             with open(self.token_file, 'w', encoding='utf-8') as f:
@@ -72,18 +141,75 @@ class TokenManager:
             st.error(f"Token dosyası okuma hatası: {e}")
             return {"token": "", "api_url": ""}
     
-    def save_token(self, token, api_url):
+    def save_token(self, token, api_url, github_token="", update_member_status=False):
         """Token dosyasını kaydet"""
         try:
+            # Sadece API token ve URL'yi token.json'a kaydet (GitHub token ayrı dosyada)
             token_data = {
                 "token": token,
                 "api_url": api_url
             }
+            
+            # Yerel dosyaya kaydet
             with open(self.token_file, 'w', encoding='utf-8') as f:
                 json.dump(token_data, f, ensure_ascii=False, indent=2)
+            
+            # GitHub token varsa ayrı dosyaya kaydet
+            if github_token:
+                self.save_github_token(github_token)
+            
+            # GitHub'a senkronize et (artık güvenli)
+            success, message = self.github_sync.sync_json_file(self.token_file, "token.json")
+            if success:
+                st.success(f"✅ Token hem yerel hem de GitHub'a kaydedildi!")
+            else:
+                st.warning(f"⚠️ Token yerel olarak kaydedildi, GitHub senkronizasyonu başarısız: {message}")
+            
+            # Üye durumlarını güncelle (isteğe bağlı)
+            if update_member_status:
+                st.info("🔄 Üye durumları güncelleniyor...")
+                member_manager = MemberManager()
+                updated_count, failed_count = member_manager.update_all_members_status()
+                
+                if updated_count > 0:
+                    st.success(f"✅ {updated_count} üyenin durumu güncellendi!")
+                if failed_count > 0:
+                    st.warning(f"⚠️ {failed_count} üye için durum güncellenemedi")
+                if updated_count == 0 and failed_count == 0:
+                    st.info("📊 Tüm üye durumları güncel")
+            
             return True
         except Exception as e:
             st.error(f"Token kaydetme hatası: {e}")
+            return False
+    
+    def save_github_token(self, github_token):
+        """Sadece GitHub token'ını kaydet"""
+        try:
+            # GitHub token'ı ayrı dosyada sakla (güvenlik için)
+            github_token_data = {
+                "github_token": github_token,
+                "created_at": datetime.now().isoformat()
+            }
+            
+            with open("github_token.json", 'w', encoding='utf-8') as f:
+                json.dump(github_token_data, f, ensure_ascii=False, indent=2)
+            
+            # token.json'dan github_token alanını kaldır (varsa)
+            current_data = self.load_token()
+            if "github_token" in current_data:
+                del current_data["github_token"]
+                with open(self.token_file, 'w', encoding='utf-8') as f:
+                    json.dump(current_data, f, ensure_ascii=False, indent=2)
+                
+                # Temizlenmiş token.json'ı GitHub'a yükle
+                github_sync = GitHubSync()
+                github_sync.sync_json_file(self.token_file, "token.json")
+            
+            st.success("✅ GitHub token güvenli olarak kaydedildi!")
+            return True
+        except Exception as e:
+            st.error(f"GitHub token kaydetme hatası: {e}")
             return False
 
 class DataProcessor:
@@ -91,7 +217,7 @@ class DataProcessor:
     def __init__(self):
         self.daily_data_file = "daily_data.json"
         self.members_file = "members.json"
-        self.github_sync = GitHubSync() if GITHUB_SYNC_AVAILABLE else None
+        self.github_sync = GitHubSync()
         self.ensure_data_files()
     
     def ensure_data_files(self):
@@ -142,7 +268,7 @@ class DataProcessor:
         return df_processed[required_columns]
     
     def save_daily_data(self, processed_df, btag, date):
-        """Günlük veriyi kaydet ve GitHub'a senkronize et"""
+        """Günlük veriyi kaydet"""
         try:
             with open(self.daily_data_file, 'r', encoding='utf-8') as f:
                 daily_data = json.load(f)
@@ -154,19 +280,21 @@ class DataProcessor:
             
             daily_data[date_str][btag] = processed_df.to_dict('records')
             
+            # Yerel dosyaya kaydet
             with open(self.daily_data_file, 'w', encoding='utf-8') as f:
                 json.dump(daily_data, f, ensure_ascii=False, indent=2)
             
-            # Otomatik GitHub senkronizasyonu
-            if self.github_sync and self.github_sync.sync_enabled:
-                with st.spinner("GitHub'a senkronize ediliyor..."):
-                    sync_success = self.github_sync.sync_json_file(self.daily_data_file)
-                    if sync_success:
-                        st.success("🔄 Veriler GitHub'a otomatik yüklendi!")
+            # GitHub'a senkronize et
+            success, message = self.github_sync.sync_json_file(self.daily_data_file, "daily_data.json")
+            if success:
+                st.success(f"✅ Günlük veri hem yerel hem de GitHub'a kaydedildi!")
+            else:
+                st.warning(f"⚠️ Yerel kayıt başarılı, GitHub senkronizasyonu başarısız: {message}")
             
             return True
         except Exception as e:
             st.error(f"Veri kaydetme hatası: {e}")
+            return False
             return False
 
 class MemberManager:
@@ -175,7 +303,7 @@ class MemberManager:
         self.members_file = "members.json"
         self.ensure_members_file()
         self.token_manager = TokenManager()
-        self.github_sync = GitHubSync() if GITHUB_SYNC_AVAILABLE else None
+        self.github_sync = GitHubSync()
     
     def ensure_members_file(self):
         """Üye dosyasını oluştur"""
@@ -220,6 +348,11 @@ class MemberManager:
             
             with open(self.members_file, 'w', encoding='utf-8') as f:
                 json.dump(members, f, ensure_ascii=False, indent=2)
+            
+            # GitHub'a senkronize et
+            success, message = self.github_sync.sync_json_file(self.members_file, "members.json")
+            if not success:
+                st.warning(f"⚠️ Üye yerel olarak eklendi, GitHub senkronizasyonu başarısız: {message}")
             
             # Üye eklendikten sonra API'den veri çek
             self.fetch_member_api_data(str(member_id))
@@ -408,125 +541,174 @@ class MemberManager:
             with open(self.members_file, 'w', encoding='utf-8') as f:
                 json.dump(members, f, ensure_ascii=False, indent=2)
             
+            # GitHub'a senkronize et
+            success, message = self.github_sync.sync_json_file(self.members_file, "members.json")
+            if not success:
+                st.warning(f"⚠️ Üye durumu yerel olarak güncellendi, GitHub senkronizasyonu başarısız: {message}")
+            
             return True
         except Exception as e:
             st.error(f"Üye durumu değiştirme hatası: {e}")
             return False
-
-def show_settings():
-    """Ayarlar sayfası"""
-    st.header("⚙️ Ayarlar")
     
-    # API Ayarları Sekmesi
-    tab1, tab2 = st.tabs(["🔑 API Ayarları", "🔄 GitHub Senkronizasyon"])
-    
-    with tab1:
-        st.subheader("📋 API Token Ayarları")
-        
-        token_manager = TokenManager()
-        token_data = token_manager.load_token()
-        
-        col1, col2 = st.columns([1, 1])
-        
-        with col1:
-            st.subheader("📋 Mevcut Token Bilgileri")
-            st.code(token_data.get('token', 'Token bulunamadı'), language='text')
-            st.text(f"API URL: {token_data.get('api_url', '')}")
-        
-        with col2:
-            st.subheader("🔧 Token Güncelleme")
-            new_token = st.text_input("Token", value=token_data.get('token', ''), type='password')
-            new_api_url = st.text_input("API URL", value=token_data.get('api_url', ''))
+    def update_all_members_status(self):
+        """Tüm üyelerin aktiflik durumunu API'den güncelle"""
+        try:
+            members = self.get_all_members()
+            if not members:
+                return 0, 0
             
-            if st.button("💾 Token Kaydet", type='primary'):
-                if new_token and new_api_url:
-                    success = token_manager.save_token(new_token, new_api_url)
-                    if success:
-                        st.success("✅ Token başarıyla kaydedildi!")
-                        st.rerun()
-                    else:
-                        st.error("❌ Token kaydetme hatası!")
+            updated_count = 0
+            failed_count = 0
+            
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            for i, member in enumerate(members):
+                member_id = member['member_id']
+                status_text.text(f"Üye durumu güncelleniyor: {member.get('username', member_id)}")
+                
+                # API'den güncel veriyi çek
+                api_data = self.fetch_member_api_data(member_id)
+                
+                if api_data:
+                    # Aktiflik durumunu belirle
+                    is_active = self.determine_member_activity_status(api_data)
+                    
+                    # Üye durumunu güncelle
+                    if member.get('is_active') != is_active:
+                        member['is_active'] = is_active
+                        member['status_updated_at'] = datetime.now().isoformat()
+                        member['status_reason'] = self.get_status_reason(api_data)
+                        updated_count += 1
                 else:
-                    st.error("❌ Lütfen tüm alanları doldurun!")
+                    failed_count += 1
+                
+                # Progress güncellemesi
+                progress = (i + 1) / len(members)
+                progress_bar.progress(progress)
+            
+            # Dosyayı kaydet
+            with open(self.members_file, 'w', encoding='utf-8') as f:
+                json.dump(members, f, ensure_ascii=False, indent=2)
+            
+            # GitHub'a senkronize et
+            success, message = self.github_sync.sync_json_file(self.members_file, "members.json")
+            
+            progress_bar.empty()
+            status_text.empty()
+            
+            return updated_count, failed_count
+            
+        except Exception as e:
+            st.error(f"Üye durumu güncelleme hatası: {e}")
+            return 0, 0
     
-    with tab2:
-        st.subheader("🔄 GitHub Otomatik Senkronizasyon")
+    def determine_member_activity_status(self, api_data):
+        """API verisine göre üye aktiflik durumunu belirle"""
+        try:
+            # Son yatırım tarihi kontrolü
+            days_without_deposit = api_data.get('days_without_deposit', 999)
+            
+            # API'den gelen durum bilgisi
+            api_status = api_data.get('status', '')
+            
+            # Aktiflik kriterleri:
+            # 1. Son 30 gün içinde yatırım yapmış
+            # 2. API durumu aktif
+            # 3. Hesap bloke değil
+            
+            if days_without_deposit <= 30:  # Son 30 günde yatırım var
+                return True
+            elif api_status and api_status.lower() in ['active', 'aktif', '1']:
+                return True
+            elif days_without_deposit > 90:  # 90 günden fazla yatırım yok
+                return False
+            else:
+                return True  # Belirsiz durumlarda aktif kabul et
+                
+        except Exception as e:
+            return True  # Hata durumunda aktif kabul et
+    
+    def get_status_reason(self, api_data):
+        """Durum değişikliği sebebini belirle"""
+        try:
+            days_without_deposit = api_data.get('days_without_deposit', 999)
+            api_status = api_data.get('status', '')
+            
+            if days_without_deposit <= 30:
+                return "Son 30 günde yatırım yaptı"
+            elif days_without_deposit > 90:
+                return f"{days_without_deposit} gündür yatırım yapmadı"
+            elif api_status:
+                return f"API durumu: {api_status}"
+            else:
+                return "Otomatik güncelleme"
+                
+        except Exception as e:
+            return "Bilinmeyen sebep"
+
+def show_settings_modal():
+    """Ayarlar modalını göster"""
+    token_manager = TokenManager()
+    token_data = token_manager.load_token()
+    
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("⚙️ API Ayarları")
+    
+    # Mevcut token göster
+    with st.sidebar.expander("Mevcut Token Bilgileri"):
+        st.code(token_data.get('token', 'Token bulunamadı'), language='text')
+        st.text(f"API URL: {token_data.get('api_url', '')}")
         
-        if not GITHUB_SYNC_AVAILABLE:
-            st.warning("⚠️ GitHub senkronizasyon modülü bulunamadı!")
-            st.info("📦 GitHub özelliklerini kullanmak için requirements.txt dosyasını GitHub'a yükleyin.")
-            return
-        
-        # GitHub Sync nesnesi oluştur
+        # GitHub token'ı ayrı dosyadan kontrol et
         github_sync = GitHubSync()
-        
-        # Repository bilgilerini göster
-        repo_info = github_sync.get_repo_info() if github_sync.sync_enabled else None
-        if repo_info:
-            st.success("✅ GitHub bağlantısı başarılı!")
-            
-            col1, col2 = st.columns([1, 1])
-            
-            with col1:
-                st.info(f"""
-                **📁 Repository:** {repo_info['full_name']}
-                **🔗 URL:** {repo_info['url']}
-                **📅 Son Push:** {repo_info['last_push']}
-                **📊 Toplam Commit:** {repo_info['commits']}
-                """)
-            
-            with col2:
-                st.subheader("🚀 Senkronizasyon İşlemleri")
-                
-                if st.button("🔄 Tüm Dosyaları Senkronize Et", type='primary'):
-                    github_sync.sync_all_files()
-                
-                st.markdown("---")
-                
-                # Tek tek dosya senkronizasyonu
-                st.subheader("📁 Tek Dosya Senkronizasyonu")
-                
-                col_btn1, col_btn2 = st.columns(2)
-                
-                with col_btn1:
-                    if st.button("📄 btag.py"):
-                        github_sync.sync_python_file("btag.py", "btag_affiliate_system.py")
-                    
-                    if st.button("📊 daily_data.json"):
-                        github_sync.sync_json_file("daily_data.json")
-                
-                with col_btn2:
-                    if st.button("👥 members.json"):
-                        github_sync.sync_json_file("members.json")
-                    
-                    if st.button("🔑 token.json"):
-                        github_sync.sync_json_file("token.json")
-        
+        github_token = github_sync.get_github_token()
+        if github_token:
+            st.text(f"GitHub Token: {'*' * 20}...{github_token[-4:] if len(github_token) > 4 else '****'}")
         else:
-            st.error("❌ GitHub bağlantısı başarısız!")
-            st.info("""
-            **GitHub Senkronizasyon Özellikleri:**
-            - Otomatik dosya yükleme
-            - Veri dosyalarını senkronize etme
-            - Streamlit Cloud otomatik güncelleme
-            - Repository bilgilerini görüntüleme
-            """)
-        
-        st.markdown("---")
-        st.subheader("ℹ️ Bilgi")
-        st.info("""
-        **GitHub Senkronizasyon Nasıl Çalışır:**
-        1. 🔄 Yerel değişikliklerinizi GitHub'a otomatik yükler
-        2. 🌐 Streamlit Cloud otomatik olarak güncellenir
-        3. 📊 Veri dosyaları (JSON) senkronize edilir
-        4. 💻 Kod değişiklikleri anında yansır
-        
-        **Senkronize Edilen Dosyalar:**
-        - `btag.py` → `btag_affiliate_system.py`
-        - `daily_data.json`
-        - `members.json` 
-        - `token.json`
-        """)
+            st.text("GitHub Token: Girilmemiş")
+    
+    # Yeni token girişi
+    st.sidebar.markdown("**API Token Bilgileri:**")
+    new_token = st.sidebar.text_input("API Token", value=token_data.get('token', ''), type='password')
+    new_api_url = st.sidebar.text_input("API URL", value=token_data.get('api_url', ''))
+    
+    st.sidebar.markdown("**GitHub Senkronizasyon:**")
+    # GitHub token'ı ayrı dosyadan al
+    github_sync = GitHubSync()
+    current_github_token = github_sync.get_github_token()
+    new_github_token = st.sidebar.text_input("GitHub Token", value=current_github_token, type='password', help="GitHub Personal Access Token (repo yazma yetkisi gerekli)")
+    
+    # Üye durumu güncelleme seçeneği
+    st.sidebar.markdown("**Üye Yönetimi:**")
+    update_members = st.sidebar.checkbox("🔄 API token değiştirildiğinde üye durumlarını güncelle", help="Yeni API token ile tüm üyelerin aktif/pasif durumlarını kontrol eder")
+    
+    col1, col2 = st.sidebar.columns(2)
+    
+    with col1:
+        if st.button("💾 API Token Kaydet", type='primary'):
+            if new_token and new_api_url:
+                success = token_manager.save_token(new_token, new_api_url, "", update_members)
+                if success:
+                    st.sidebar.success("✅ API Token başarıyla kaydedildi!")
+                    st.rerun()
+                else:
+                    st.sidebar.error("❌ Token kaydetme hatası!")
+            else:
+                st.sidebar.warning("⚠️ API Token ve URL alanlarını doldurun!")
+    
+    with col2:
+        if st.button("🔗 GitHub Token Kaydet"):
+            if new_github_token:
+                success = token_manager.save_github_token(new_github_token)
+                if success:
+                    st.sidebar.success("✅ GitHub Token kaydedildi!")
+                    st.rerun()
+                else:
+                    st.sidebar.error("❌ GitHub Token kaydetme hatası!")
+            else:
+                st.sidebar.warning("⚠️ GitHub Token alanını doldurun!")
 
 def show_dashboard():
     """Ana sayfa göster"""
@@ -585,70 +767,6 @@ def show_dashboard():
     
     with col4:
         st.metric("💸 Toplam Çekim", f"{total_withdrawals:,.0f} TL")
-    
-    # Aktif/Pasif Üye Dağılımı Pie Chart
-    st.markdown("---")
-    st.subheader("👥 Üye Durumu Dağılımı")
-    
-    # Aktif ve pasif üye sayılarını hesapla
-    active_members = total_members - passive_members
-    
-    if total_members > 0:
-        col_chart1, col_chart2 = st.columns([2, 1])
-        
-        with col_chart1:
-            # Pie chart verilerini hazırla
-            pie_data = {
-                'Durum': ['Aktif Üyeler', 'Pasif Üyeler'],
-                'Sayı': [active_members, passive_members],
-                'Renk': ['#00CC96', '#FF6B6B']
-            }
-            
-            # Pie chart oluştur
-            fig_pie = px.pie(
-                values=pie_data['Sayı'], 
-                names=pie_data['Durum'],
-                title='Üye Durumu Dağılımı',
-                color_discrete_sequence=['#00CC96', '#FF6B6B']
-            )
-            
-            # Grafik ayarları
-            fig_pie.update_traces(
-                textposition='inside', 
-                textinfo='percent+label',
-                hovertemplate='<b>%{label}</b><br>Sayı: %{value}<br>Oran: %{percent}<extra></extra>'
-            )
-            
-            fig_pie.update_layout(
-                showlegend=True,
-                height=400,
-                font=dict(size=14)
-            )
-            
-            st.plotly_chart(fig_pie, use_container_width=True)
-        
-        with col_chart2:
-            st.markdown("### 📊 Detaylar")
-            st.markdown(f"**🟢 Aktif Üyeler:** {active_members}")
-            st.markdown(f"**🔴 Pasif Üyeler:** {passive_members}")
-            st.markdown("---")
-            
-            if total_members > 0:
-                active_percentage = (active_members / total_members) * 100
-                passive_percentage = (passive_members / total_members) * 100
-                
-                st.markdown(f"**Aktif Oran:** {active_percentage:.1f}%")
-                st.markdown(f"**Pasif Oran:** {passive_percentage:.1f}%")
-                
-                # Durum değerlendirmesi
-                if active_percentage >= 80:
-                    st.success("✅ Mükemmel! Üyelerin çoğu aktif.")
-                elif active_percentage >= 60:
-                    st.warning("⚠️ İyi durumda, ancak pasif üye sayısı artıyor.")
-                else:
-                    st.error("🚨 Dikkat! Pasif üye oranı yüksek.")
-    else:
-        st.info("📝 Henüz üye bulunmuyor.")
     
     # Net kar/zarar
     st.markdown("---")
@@ -1192,21 +1310,18 @@ def show_statistics():
         return
     
     # Tarih aralığı seçimi
-    st.subheader("📅 Tarih Aralığı Seçin")
-    col1, col2 = st.columns(2)
+    st.sidebar.subheader("📅 Tarih Aralığı")
     
     available_dates = sorted(daily_data.keys())
     if available_dates:
-        with col1:
-            start_date = st.date_input(
-                "Başlangıç Tarihi",
-                value=datetime.strptime(available_dates[0], '%Y-%m-%d').date()
-            )
-        with col2:
-            end_date = st.date_input(
-                "Bitiş Tarihi", 
-                value=datetime.strptime(available_dates[-1], '%Y-%m-%d').date()
-            )
+        start_date = st.sidebar.date_input(
+            "Başlangıç Tarihi",
+            value=datetime.strptime(available_dates[0], '%Y-%m-%d').date()
+        )
+        end_date = st.sidebar.date_input(
+            "Bitiş Tarihi", 
+            value=datetime.strptime(available_dates[-1], '%Y-%m-%d').date()
+        )
     else:
         st.error("Veri bulunamadı")
         return
@@ -1471,38 +1586,69 @@ def show_statistics():
                            title='Yatırım vs Çekim Adedi Karşılaştırması')
             st.plotly_chart(fig, use_container_width=True)
 
+def startup_github_sync():
+    """Uygulama başlatıldığında GitHub senkronizasyonu"""
+    github_sync = GitHubSync()
+    github_token = github_sync.get_github_token()
+    
+    if not github_token:
+        return  # GitHub token yoksa senkronizasyon yapma
+    
+    # Senkronize edilecek dosyalar
+    files_to_sync = [
+        ("members.json", "members.json"),
+        ("daily_data.json", "daily_data.json")
+    ]
+    
+    sync_results = []
+    
+    for local_file, github_file in files_to_sync:
+        if os.path.exists(local_file):
+            success, message = github_sync.sync_json_file(local_file, github_file)
+            sync_results.append((github_file, success, message))
+    
+    # Sonuçları göster (sadece hata varsa)
+    failed_syncs = [result for result in sync_results if not result[1]]
+    if failed_syncs:
+        with st.sidebar.expander("⚠️ Başlangıç Senkronizasyon Uyarıları", expanded=False):
+            for file_name, success, message in failed_syncs:
+                st.warning(f"{file_name}: {message}")
+    else:
+        # Başarılı senkronizasyon için küçük bildirim
+        if sync_results:
+            st.sidebar.success(f"✅ {len(sync_results)} dosya GitHub'a senkronize edildi")
+
 def main():
     """Ana uygulama fonksiyonu"""
     st.title("📊 BTag Affiliate Takip Sistemi")
     st.markdown("---")
     
-    # Üst sekmeler
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-        "🏠 Ana Sayfa", 
-        "📤 Excel Yükleme", 
-        "👥 Üye Yönetimi", 
-        "📋 Raporlar", 
-        "📊 İstatistikler", 
-        "⚙️ Ayarlar"
-    ])
+    # Başlangıç GitHub senkronizasyonu
+    startup_github_sync()
     
-    with tab1:
+    # Sidebar - Ana menü
+    st.sidebar.title("📋 Menü")
+    menu = st.sidebar.selectbox(
+        "İşlem Seçin",
+        ["Ana Sayfa", "Excel Yükleme", "Üye Yönetimi", "Raporlar", "İstatistikler", "Ayarlar"]
+    )
+    
+    # Ayarlar modalını göster
+    show_settings_modal()
+    
+    if menu == "Ana Sayfa":
         show_dashboard()
-    
-    with tab2:
+    elif menu == "Excel Yükleme":
         show_excel_upload()
-    
-    with tab3:
+    elif menu == "Üye Yönetimi":
         show_member_management()
-    
-    with tab4:
+    elif menu == "Raporlar":
         show_reports()
-    
-    with tab5:
+    elif menu == "İstatistikler":
         show_statistics()
-    
-    with tab6:
-        show_settings()
+    elif menu == "Ayarlar":
+        st.header("⚙️ Ayarlar")
+        st.info("Ayarlar sidebar'da bulunmaktadır.")
 
 if __name__ == "__main__":
     main()
