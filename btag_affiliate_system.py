@@ -545,8 +545,10 @@ def show_dashboard():
     try:
         with open(data_processor.daily_data_file, 'r', encoding='utf-8') as f:
             daily_data = json.load(f)
-    except:
+    except Exception as e:
+        print(f"Veri yukleme hatasi: {e}")
         daily_data = {}
+        st.error(f"Veri yukleme hatasi: {e}")
     
     # Bu ay için toplam hesaplamaları
     current_month_data = {}
@@ -666,7 +668,7 @@ def show_dashboard():
         st.subheader("📊 Son 7 Günün İstatistikleri")
         
         # Son 7 günün verilerini al
-        recent_dates = sorted(daily_data.keys())[-7:]
+        recent_dates = sorted(daily_data.keys(), key=lambda x: datetime.strptime(x, '%Y-%m-%d'))[-7:]
         daily_stats = []
         
         for date in recent_dates:
@@ -989,8 +991,10 @@ def show_reports():
     try:
         with open(data_processor.daily_data_file, 'r', encoding='utf-8') as f:
             daily_data = json.load(f)
-    except:
+    except Exception as e:
+        print(f"Veri yukleme hatasi: {e}")
         daily_data = {}
+        st.error(f"Veri yukleme hatasi: {e}")
         st.warning("Henüz veri bulunmuyor.")
         return
     
@@ -1002,7 +1006,7 @@ def show_reports():
     st.subheader("📅 Rapor Dönemi Seçin")
     col1, col2 = st.columns(2)
     
-    available_dates = sorted(daily_data.keys())
+    available_dates = sorted(daily_data.keys(), key=lambda x: datetime.strptime(x, '%Y-%m-%d'))
     min_date = datetime.strptime(available_dates[0], '%Y-%m-%d').date() if available_dates else datetime.now().date()
     max_date = datetime.strptime(available_dates[-1], '%Y-%m-%d').date() if available_dates else datetime.now().date()
     
@@ -1032,8 +1036,9 @@ def show_reports():
                     for record in records:
                         member_id = str(record.get('member_id', ''))
                         # Sadece aktif üyelerin verilerini dahil et
-                        if member_id not in active_member_ids:
-                            continue
+                        # Tum uyeleri dahil et - aktif kontrolunu gevset
+                        # if member_id not in active_member_ids:
+                        #     continue
                             
                         deposits = record.get('total_deposits', 0)
                         withdrawals = record.get('total_withdrawals', 0)
@@ -1184,8 +1189,10 @@ def show_statistics():
     try:
         with open(data_processor.daily_data_file, 'r', encoding='utf-8') as f:
             daily_data = json.load(f)
-    except:
+    except Exception as e:
+        print(f"Veri yukleme hatasi: {e}")
         daily_data = {}
+        st.error(f"Veri yukleme hatasi: {e}")
     
     if not daily_data:
         st.warning("⚠️ Henüz veri bulunmuyor. Önce Excel dosyası yükleyin.")
@@ -1195,7 +1202,7 @@ def show_statistics():
     st.subheader("📅 Tarih Aralığı Seçin")
     col1, col2 = st.columns(2)
     
-    available_dates = sorted(daily_data.keys())
+    available_dates = sorted(daily_data.keys(), key=lambda x: datetime.strptime(x, '%Y-%m-%d'))
     if available_dates:
         with col1:
             start_date = st.date_input(
@@ -1472,6 +1479,12 @@ def show_statistics():
             st.plotly_chart(fig, use_container_width=True)
 
 def main():
+# Veri yükleme öncesi cache temizle
+if hasattr(st, 'cache_data'):
+    st.cache_data.clear()
+if hasattr(st, 'cache_resource'):
+    st.cache_resource.clear()
+
     """Ana uygulama fonksiyonu"""
     st.title("📊 BTag Affiliate Takip Sistemi")
     st.markdown("---")
