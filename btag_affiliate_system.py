@@ -1486,6 +1486,9 @@ def show_statistics():
             st.plotly_chart(fig, use_container_width=True)
 
 def main():
+    # Veri yukleme oncesi cache temizle
+    clear_streamlit_cache()
+
 # Veri yükleme öncesi cache temizle
 if hasattr(st, 'cache_data'):
     st.cache_data.clear()
