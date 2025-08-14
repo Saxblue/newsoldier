@@ -7215,5 +7215,15 @@
     "last_login_date": "2025-08-13T00:35:14.967",
     "partner_name": "Salamisbahis-18756287",
     "birth_date": "1986-07-20T00:00:00"
+  },
+  {
+    "member_id": "307794349",
+    "username": "Orhan88",
+    "full_name": "Arslan Orhan ",
+    "is_active": true,
+    "created_at": "2025-08-15T00:11:25.348535",
+    "last_deposit_date": null,
+    "days_without_deposit": 0,
+    "api_data": {}
   }
 ]
