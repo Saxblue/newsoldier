@@ -14676,5 +14676,15 @@
     "last_kpi_update": "2025-08-20T00:36:40.344854",
     "deposit_count": 1,
     "withdrawal_count": 0
+  },
+  {
+    "member_id": "311205550",
+    "username": "endermahmut",
+    "full_name": "Köse Mahmut ",
+    "is_active": true,
+    "created_at": "2025-08-21T00:16:57.350634",
+    "last_deposit_date": null,
+    "days_without_deposit": 0,
+    "api_data": {}
   }
 ]
