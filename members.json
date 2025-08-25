@@ -14799,5 +14799,15 @@
     "last_login_date": "2025-08-23T19:10:43.541",
     "partner_name": "Salamisbahis-18756287",
     "birth_date": "2007-08-13T00:00:00"
+  },
+  {
+    "member_id": "313423168",
+    "username": "Alperen5353",
+    "full_name": "Badoğlu Aydın",
+    "is_active": true,
+    "created_at": "2025-08-26T00:38:51.551249",
+    "last_deposit_date": null,
+    "days_without_deposit": 0,
+    "api_data": {}
   }
 ]
