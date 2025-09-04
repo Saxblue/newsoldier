@@ -12824,5 +12824,342 @@
         "total_withdrawals": 0
       }
     ]
+  },
+  "2025-09-04": {
+    "2424878": [
+      {
+        "member_id": "69025769",
+        "username": "adil75",
+        "customer_name": "Yıldız Adil ",
+        "deposit_count": 2,
+        "total_deposits": 500.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "278598730",
+        "username": "cumaali",
+        "customer_name": "Arslan Cuma Ali",
+        "deposit_count": 2,
+        "total_deposits": 810.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "278652484",
+        "username": "kacalin5353",
+        "customer_name": "Kaçalın Mustafa",
+        "deposit_count": 0,
+        "total_deposits": 0.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "278655000",
+        "username": "gezgin1986",
+        "customer_name": "Çaglar Emine",
+        "deposit_count": 1,
+        "total_deposits": 950.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "278672241",
+        "username": "iskenderb",
+        "customer_name": "Beluk İskender",
+        "deposit_count": 4,
+        "total_deposits": 8000.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "278674730",
+        "username": "delikadir",
+        "customer_name": "Karaca Kadir",
+        "deposit_count": 8,
+        "total_deposits": 16000.0,
+        "withdrawal_count": 2,
+        "total_withdrawals": 11000
+      },
+      {
+        "member_id": "278675575",
+        "username": "cakmakm",
+        "customer_name": "Çakmak Mehmet",
+        "deposit_count": 1,
+        "total_deposits": 3000.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "278746421",
+        "username": "Bulentd",
+        "customer_name": "Demirci Bülent",
+        "deposit_count": 1,
+        "total_deposits": 3000.0,
+        "withdrawal_count": 3,
+        "total_withdrawals": 37000
+      },
+      {
+        "member_id": "278755511",
+        "username": "sodii",
+        "customer_name": "Sodikova Himoyathon",
+        "deposit_count": 3,
+        "total_deposits": 1300.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "278758234",
+        "username": "ulku",
+        "customer_name": "Yildirim Ulkiye",
+        "deposit_count": 0,
+        "total_deposits": 0.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "278766058",
+        "username": "dursunk",
+        "customer_name": "Kardaslar Dursunali",
+        "deposit_count": 2,
+        "total_deposits": 4800.0,
+        "withdrawal_count": 2,
+        "total_withdrawals": 10000
+      },
+      {
+        "member_id": "278767458",
+        "username": "tarak",
+        "customer_name": "Tarakçı Yaşar",
+        "deposit_count": 1,
+        "total_deposits": 995.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "278778305",
+        "username": "suleymanh",
+        "customer_name": "Halil Suleyman",
+        "deposit_count": 0,
+        "total_deposits": 0.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "278791437",
+        "username": "Berat14",
+        "customer_name": "Atar Berat",
+        "deposit_count": 2,
+        "total_deposits": 2400.0,
+        "withdrawal_count": 1,
+        "total_withdrawals": 4200
+      },
+      {
+        "member_id": "278795678",
+        "username": "isik",
+        "customer_name": "Işik Mehmet",
+        "deposit_count": 0,
+        "total_deposits": 0.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "278795868",
+        "username": "lolla",
+        "customer_name": "Ozodova Zilola",
+        "deposit_count": 1,
+        "total_deposits": 2000.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "278799883",
+        "username": "toplu28",
+        "customer_name": "Toplu Yakup",
+        "deposit_count": 2,
+        "total_deposits": 1510.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "278807068",
+        "username": "ekaterina61",
+        "customer_name": "Halil Ekaterina",
+        "deposit_count": 1,
+        "total_deposits": 1400.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "278810122",
+        "username": "tuncay777",
+        "customer_name": "Karamanoglu Tuncay",
+        "deposit_count": 3,
+        "total_deposits": 5600.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "278812778",
+        "username": "Ikizler00",
+        "customer_name": "Osmanoğlu Hami",
+        "deposit_count": 1,
+        "total_deposits": 170.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "278817764",
+        "username": "kacaliny",
+        "customer_name": "Kacalin Yeliz ",
+        "deposit_count": 1,
+        "total_deposits": 490.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "278822436",
+        "username": "gambat061",
+        "customer_name": "Halil Murat",
+        "deposit_count": 3,
+        "total_deposits": 3000.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "278825003",
+        "username": "ankara",
+        "customer_name": "Gulen Ahmet",
+        "deposit_count": 0,
+        "total_deposits": 0.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "278829132",
+        "username": "erogluo",
+        "customer_name": "Eroglu Oguzhan",
+        "deposit_count": 0,
+        "total_deposits": 0.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "278832458",
+        "username": "eda616",
+        "customer_name": "Karcı Eda nur",
+        "deposit_count": 1,
+        "total_deposits": 1000.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "278833348",
+        "username": "karciy",
+        "customer_name": "Karci Yusuf",
+        "deposit_count": 0,
+        "total_deposits": 0.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "280077249",
+        "username": "Aslan5361",
+        "customer_name": "Yılmaz Muammer",
+        "deposit_count": 3,
+        "total_deposits": 3315.0,
+        "withdrawal_count": 1,
+        "total_withdrawals": 2000
+      },
+      {
+        "member_id": "280120033",
+        "username": "pozoni055",
+        "customer_name": "Yaldızlı Hamdi",
+        "deposit_count": 3,
+        "total_deposits": 11000.0,
+        "withdrawal_count": 1,
+        "total_withdrawals": 7500
+      },
+      {
+        "member_id": "280131130",
+        "username": "cetin48",
+        "customer_name": "Atar Çetin",
+        "deposit_count": 4,
+        "total_deposits": 3700.0,
+        "withdrawal_count": 1,
+        "total_withdrawals": 2430
+      },
+      {
+        "member_id": "280150541",
+        "username": "ozturk48",
+        "customer_name": "Ozturk Ali",
+        "deposit_count": 1,
+        "total_deposits": 500.0,
+        "withdrawal_count": 1,
+        "total_withdrawals": 7500
+      },
+      {
+        "member_id": "280812678",
+        "username": "akcann",
+        "customer_name": "Akcan Ozan",
+        "deposit_count": 1,
+        "total_deposits": 450.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "282529810",
+        "username": "Aynurd",
+        "customer_name": "Demirci Aynur",
+        "deposit_count": 1,
+        "total_deposits": 500.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "284708311",
+        "username": "dondu6464",
+        "customer_name": "Diker Döndü",
+        "deposit_count": 4,
+        "total_deposits": 1000.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "295111078",
+        "username": "sekbani",
+        "customer_name": "Özkurt Kasım",
+        "deposit_count": 3,
+        "total_deposits": 15000.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "303796999",
+        "username": "Aliaydin",
+        "customer_name": "Uzun Ali Aydin",
+        "deposit_count": 2,
+        "total_deposits": 2115.0,
+        "withdrawal_count": 1,
+        "total_withdrawals": 3500
+      },
+      {
+        "member_id": "307676390",
+        "username": "benidze0808",
+        "customer_name": "benidze Mzevinar",
+        "deposit_count": 2,
+        "total_deposits": 1033.0,
+        "withdrawal_count": 0,
+        "total_withdrawals": 0
+      },
+      {
+        "member_id": "318266755",
+        "username": "Oygul7",
+        "customer_name": "rızakova Oygul",
+        "deposit_count": 1,
+        "total_deposits": 2000.0,
+        "withdrawal_count": 1,
+        "total_withdrawals": 11500
+      }
+    ]
   }
 }
