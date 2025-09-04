@@ -14963,5 +14963,15 @@
     "last_login_date": "2025-09-02T16:53:52.721",
     "partner_name": "Salamisbahis-18756287",
     "birth_date": "1987-08-17T00:00:00"
+  },
+  {
+    "member_id": "69025769",
+    "username": "adil75",
+    "full_name": "Yıldız Adil ",
+    "is_active": true,
+    "created_at": "2025-09-05T00:43:00.640242",
+    "last_deposit_date": null,
+    "days_without_deposit": 0,
+    "api_data": {}
   }
 ]
