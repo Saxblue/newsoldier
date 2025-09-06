@@ -15045,5 +15045,15 @@
     "last_login_date": "2025-09-04T22:46:27.47",
     "partner_name": "Salamisbahis-18756287",
     "birth_date": "1985-06-28T00:00:00"
+  },
+  {
+    "member_id": "319150287",
+    "username": "ozhan61",
+    "full_name": "Yıldız Özhan",
+    "is_active": true,
+    "created_at": "2025-09-07T00:35:26.843440",
+    "last_deposit_date": null,
+    "days_without_deposit": 0,
+    "api_data": {}
   }
 ]
