@@ -15086,5 +15086,15 @@
     "last_login_date": "2025-09-06T23:43:27.756",
     "partner_name": "Salamisbahis-18756287",
     "birth_date": "1995-09-08T00:00:00"
+  },
+  {
+    "member_id": "319757789",
+    "username": "Halil61",
+    "full_name": "Halil Şenol",
+    "is_active": true,
+    "created_at": "2025-09-09T00:26:11.345267",
+    "last_deposit_date": null,
+    "days_without_deposit": 0,
+    "api_data": {}
   }
 ]
