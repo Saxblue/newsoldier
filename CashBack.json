@@ -1,5 +1,1427 @@
 [
     {
+        "date": "2025-09-16_00:30:05",
+        "timestamp": "2025-09-17T00:30:05.451797",
+        "data": [
+            {
+                "Müşteri_Kimliği": 246293251,
+                "Müşteri_Adı": "Tokur  İbrahim Kadir ",
+                "Adet": 3,
+                "Toplam_Miktar": 15700
+            },
+            {
+                "Müşteri_Kimliği": 146768370,
+                "Müşteri_Adı": "Okumuş Resul",
+                "Adet": 3,
+                "Toplam_Miktar": 10000
+            },
+            {
+                "Müşteri_Kimliği": 283992719,
+                "Müşteri_Adı": "Uluağ Emrah",
+                "Adet": 2,
+                "Toplam_Miktar": 8738
+            },
+            {
+                "Müşteri_Kimliği": 214053339,
+                "Müşteri_Adı": "Bozkurt Mustafa",
+                "Adet": 5,
+                "Toplam_Miktar": 7925
+            },
+            {
+                "Müşteri_Kimliği": 1872980773,
+                "Müşteri_Adı": "IŞIK EREN ",
+                "Adet": 5,
+                "Toplam_Miktar": 6800
+            },
+            {
+                "Müşteri_Kimliği": 69106391,
+                "Müşteri_Adı": "Tığlı Recep ",
+                "Adet": 4,
+                "Toplam_Miktar": 6215
+            },
+            {
+                "Müşteri_Kimliği": 192175787,
+                "Müşteri_Adı": "Uslu Burak  Can",
+                "Adet": 2,
+                "Toplam_Miktar": 6125
+            },
+            {
+                "Müşteri_Kimliği": 202711238,
+                "Müşteri_Adı": "Tut Arzu",
+                "Adet": 2,
+                "Toplam_Miktar": 5000
+            },
+            {
+                "Müşteri_Kimliği": 167727290,
+                "Müşteri_Adı": "Erdoğan Aykut",
+                "Adet": 1,
+                "Toplam_Miktar": 5000
+            },
+            {
+                "Müşteri_Kimliği": 230096952,
+                "Müşteri_Adı": "Dikkol Hakan",
+                "Adet": 1,
+                "Toplam_Miktar": 5000
+            },
+            {
+                "Müşteri_Kimliği": 199980691,
+                "Müşteri_Adı": "Güney  Seçil ",
+                "Adet": 3,
+                "Toplam_Miktar": 4500
+            },
+            {
+                "Müşteri_Kimliği": 314448424,
+                "Müşteri_Adı": "Sırkıntı Umut",
+                "Adet": 3,
+                "Toplam_Miktar": 4475
+            },
+            {
+                "Müşteri_Kimliği": 200584718,
+                "Müşteri_Adı": "Güllü Uğur",
+                "Adet": 2,
+                "Toplam_Miktar": 3861
+            },
+            {
+                "Müşteri_Kimliği": 131638709,
+                "Müşteri_Adı": "Güney Çetin",
+                "Adet": 2,
+                "Toplam_Miktar": 3750
+            },
+            {
+                "Müşteri_Kimliği": 274293693,
+                "Müşteri_Adı": "İnce Harun",
+                "Adet": 3,
+                "Toplam_Miktar": 3588
+            },
+            {
+                "Müşteri_Kimliği": 199542316,
+                "Müşteri_Adı": "Ayaz  Fatih ",
+                "Adet": 6,
+                "Toplam_Miktar": 3313
+            },
+            {
+                "Müşteri_Kimliği": 199920986,
+                "Müşteri_Adı": "BAYKIN Emre",
+                "Adet": 3,
+                "Toplam_Miktar": 3225
+            },
+            {
+                "Müşteri_Kimliği": 199123734,
+                "Müşteri_Adı": "Şener Murat",
+                "Adet": 1,
+                "Toplam_Miktar": 3000
+            },
+            {
+                "Müşteri_Kimliği": 301934725,
+                "Müşteri_Adı": "Tanış Furkan",
+                "Adet": 2,
+                "Toplam_Miktar": 2500
+            },
+            {
+                "Müşteri_Kimliği": 248090003,
+                "Müşteri_Adı": "Kılıç Esin",
+                "Adet": 5,
+                "Toplam_Miktar": 2500
+            },
+            {
+                "Müşteri_Kimliği": 203358220,
+                "Müşteri_Adı": "Dalga ersin",
+                "Adet": 4,
+                "Toplam_Miktar": 2498
+            },
+            {
+                "Müşteri_Kimliği": 278807996,
+                "Müşteri_Adı": "Karataş Cenk",
+                "Adet": 2,
+                "Toplam_Miktar": 2275
+            },
+            {
+                "Müşteri_Kimliği": 199990783,
+                "Müşteri_Adı": "Yıldırım Zerrin Selin",
+                "Adet": 4,
+                "Toplam_Miktar": 2115
+            },
+            {
+                "Müşteri_Kimliği": 296012124,
+                "Müşteri_Adı": "Arıcı Doğukan",
+                "Adet": 2,
+                "Toplam_Miktar": 2000
+            },
+            {
+                "Müşteri_Kimliği": 199542371,
+                "Müşteri_Adı": "Yildiz Münevver ",
+                "Adet": 1,
+                "Toplam_Miktar": 1750
+            },
+            {
+                "Müşteri_Kimliği": 191023579,
+                "Müşteri_Adı": "Şahin  Selvi",
+                "Adet": 2,
+                "Toplam_Miktar": 1750
+            },
+            {
+                "Müşteri_Kimliği": 288498447,
+                "Müşteri_Adı": "Suluyer  Oğuzhan ",
+                "Adet": 4,
+                "Toplam_Miktar": 1500
+            },
+            {
+                "Müşteri_Kimliği": 259797181,
+                "Müşteri_Adı": "Saklıyan  Halil İbrahim ",
+                "Adet": 2,
+                "Toplam_Miktar": 1498
+            },
+            {
+                "Müşteri_Kimliği": 275519663,
+                "Müşteri_Adı": "Berber Mustafa",
+                "Adet": 7,
+                "Toplam_Miktar": 1490
+            },
+            {
+                "Müşteri_Kimliği": 161065819,
+                "Müşteri_Adı": "Atar Yaşariye",
+                "Adet": 2,
+                "Toplam_Miktar": 1475
+            },
+            {
+                "Müşteri_Kimliği": 283948850,
+                "Müşteri_Adı": "Güven Ramazan",
+                "Adet": 2,
+                "Toplam_Miktar": 1250
+            },
+            {
+                "Müşteri_Kimliği": 277967146,
+                "Müşteri_Adı": "Yılmaz Gökhan",
+                "Adet": 1,
+                "Toplam_Miktar": 1250
+            },
+            {
+                "Müşteri_Kimliği": 246035540,
+                "Müşteri_Adı": "Kuktaş Ahmet Sefa",
+                "Adet": 3,
+                "Toplam_Miktar": 1250
+            },
+            {
+                "Müşteri_Kimliği": 260669835,
+                "Müşteri_Adı": "Tanış Mehmet",
+                "Adet": 1,
+                "Toplam_Miktar": 1250
+            },
+            {
+                "Müşteri_Kimliği": 200546047,
+                "Müşteri_Adı": "Doğan Halil",
+                "Adet": 1,
+                "Toplam_Miktar": 1250
+            },
+            {
+                "Müşteri_Kimliği": 218962700,
+                "Müşteri_Adı": "Sönmez Tamer",
+                "Adet": 1,
+                "Toplam_Miktar": 1250
+            },
+            {
+                "Müşteri_Kimliği": 198001226,
+                "Müşteri_Adı": "akın okay",
+                "Adet": 1,
+                "Toplam_Miktar": 1250
+            },
+            {
+                "Müşteri_Kimliği": 320987770,
+                "Müşteri_Adı": "Yolcu  Naime",
+                "Adet": 1,
+                "Toplam_Miktar": 1250
+            },
+            {
+                "Müşteri_Kimliği": 173162982,
+                "Müşteri_Adı": "Alpay Bülent",
+                "Adet": 2,
+                "Toplam_Miktar": 1225
+            },
+            {
+                "Müşteri_Kimliği": 297584708,
+                "Müşteri_Adı": "Sandal Nadir",
+                "Adet": 2,
+                "Toplam_Miktar": 1200
+            },
+            {
+                "Müşteri_Kimliği": 205734567,
+                "Müşteri_Adı": "Çağala Burhan",
+                "Adet": 1,
+                "Toplam_Miktar": 1025
+            },
+            {
+                "Müşteri_Kimliği": 280131130,
+                "Müşteri_Adı": "Atar Çetin",
+                "Adet": 4,
+                "Toplam_Miktar": 1000
+            },
+            {
+                "Müşteri_Kimliği": 200499425,
+                "Müşteri_Adı": "Girgin Muhammet",
+                "Adet": 1,
+                "Toplam_Miktar": 1000
+            },
+            {
+                "Müşteri_Kimliği": 201790968,
+                "Müşteri_Adı": "tengel  üzeyir ",
+                "Adet": 2,
+                "Toplam_Miktar": 1000
+            },
+            {
+                "Müşteri_Kimliği": 279120678,
+                "Müşteri_Adı": "Kaçalin Mevlut",
+                "Adet": 2,
+                "Toplam_Miktar": 1000
+            },
+            {
+                "Müşteri_Kimliği": 316807063,
+                "Müşteri_Adı": "Şenbol Ahmet",
+                "Adet": 2,
+                "Toplam_Miktar": 1000
+            },
+            {
+                "Müşteri_Kimliği": 297926252,
+                "Müşteri_Adı": "Demirağcı Özde",
+                "Adet": 3,
+                "Toplam_Miktar": 1000
+            },
+            {
+                "Müşteri_Kimliği": 251960836,
+                "Müşteri_Adı": "İleri Sevilay",
+                "Adet": 2,
+                "Toplam_Miktar": 1000
+            },
+            {
+                "Müşteri_Kimliği": 250430525,
+                "Müşteri_Adı": "Demirci  Ahmet ",
+                "Adet": 1,
+                "Toplam_Miktar": 1000
+            },
+            {
+                "Müşteri_Kimliği": 77914282,
+                "Müşteri_Adı": "Dengiz Nihat ",
+                "Adet": 2,
+                "Toplam_Miktar": 998
+            },
+            {
+                "Müşteri_Kimliği": 280077249,
+                "Müşteri_Adı": "Yılmaz Muammer",
+                "Adet": 3,
+                "Toplam_Miktar": 998
+            },
+            {
+                "Müşteri_Kimliği": 293425868,
+                "Müşteri_Adı": "Mete Murat",
+                "Adet": 1,
+                "Toplam_Miktar": 994
+            },
+            {
+                "Müşteri_Kimliği": 90840650,
+                "Müşteri_Adı": "Rasulova  Dilafruz ",
+                "Adet": 3,
+                "Toplam_Miktar": 948
+            },
+            {
+                "Müşteri_Kimliği": 256672819,
+                "Müşteri_Adı": "Yıldırım Uğur",
+                "Adet": 3,
+                "Toplam_Miktar": 925
+            },
+            {
+                "Müşteri_Kimliği": 278672241,
+                "Müşteri_Adı": "Beluk İskender",
+                "Adet": 2,
+                "Toplam_Miktar": 875
+            },
+            {
+                "Müşteri_Kimliği": 279732148,
+                "Müşteri_Adı": "boyaci Suphi",
+                "Adet": 1,
+                "Toplam_Miktar": 875
+            },
+            {
+                "Müşteri_Kimliği": 280132264,
+                "Müşteri_Adı": "Taşkın Aşkın",
+                "Adet": 2,
+                "Toplam_Miktar": 875
+            },
+            {
+                "Müşteri_Kimliği": 250521413,
+                "Müşteri_Adı": "Aydoğan Olcay",
+                "Adet": 3,
+                "Toplam_Miktar": 850
+            },
+            {
+                "Müşteri_Kimliği": 102385183,
+                "Müşteri_Adı": "ünlü servet",
+                "Adet": 4,
+                "Toplam_Miktar": 813
+            },
+            {
+                "Müşteri_Kimliği": 1829130916,
+                "Müşteri_Adı": "kıvrak Ali ",
+                "Adet": 2,
+                "Toplam_Miktar": 755
+            },
+            {
+                "Müşteri_Kimliği": 275426735,
+                "Müşteri_Adı": "Ateş Harun",
+                "Adet": 8,
+                "Toplam_Miktar": 752
+            },
+            {
+                "Müşteri_Kimliği": 88590467,
+                "Müşteri_Adı": "Kesme Emre ",
+                "Adet": 3,
+                "Toplam_Miktar": 750
+            },
+            {
+                "Müşteri_Kimliği": 268152822,
+                "Müşteri_Adı": "Sonğur Eyyüp",
+                "Adet": 2,
+                "Toplam_Miktar": 750
+            },
+            {
+                "Müşteri_Kimliği": 130724983,
+                "Müşteri_Adı": "Kocakurt Güray",
+                "Adet": 2,
+                "Toplam_Miktar": 750
+            },
+            {
+                "Müşteri_Kimliği": 319757789,
+                "Müşteri_Adı": "Halil Şenol",
+                "Adet": 1,
+                "Toplam_Miktar": 750
+            },
+            {
+                "Müşteri_Kimliği": 285784031,
+                "Müşteri_Adı": "Çelik Tayfun",
+                "Adet": 2,
+                "Toplam_Miktar": 750
+            },
+            {
+                "Müşteri_Kimliği": 319775062,
+                "Müşteri_Adı": "çiçek fatma",
+                "Adet": 3,
+                "Toplam_Miktar": 750
+            },
+            {
+                "Müşteri_Kimliği": 280081600,
+                "Müşteri_Adı": "Şahin Yunus ",
+                "Adet": 1,
+                "Toplam_Miktar": 750
+            },
+            {
+                "Müşteri_Kimliği": 278746421,
+                "Müşteri_Adı": "Demirci Bülent",
+                "Adet": 1,
+                "Toplam_Miktar": 750
+            },
+            {
+                "Müşteri_Kimliği": 252445553,
+                "Müşteri_Adı": "Şagban Medine",
+                "Adet": 2,
+                "Toplam_Miktar": 750
+            },
+            {
+                "Müşteri_Kimliği": 301763646,
+                "Müşteri_Adı": "Kaya Cevdet",
+                "Adet": 1,
+                "Toplam_Miktar": 750
+            },
+            {
+                "Müşteri_Kimliği": 312522756,
+                "Müşteri_Adı": "Sayın Mehmet Fatih",
+                "Adet": 1,
+                "Toplam_Miktar": 750
+            },
+            {
+                "Müşteri_Kimliği": 198045284,
+                "Müşteri_Adı": "Şahin Onur",
+                "Adet": 1,
+                "Toplam_Miktar": 749
+            },
+            {
+                "Müşteri_Kimliği": 49590726,
+                "Müşteri_Adı": "Karanisoğlu Ömer Miraç ",
+                "Adet": 3,
+                "Toplam_Miktar": 738
+            },
+            {
+                "Müşteri_Kimliği": 259023910,
+                "Müşteri_Adı": "Engin Emirhan ",
+                "Adet": 3,
+                "Toplam_Miktar": 725
+            },
+            {
+                "Müşteri_Kimliği": 296081888,
+                "Müşteri_Adı": "Tanış Hüseyin ",
+                "Adet": 2,
+                "Toplam_Miktar": 713
+            },
+            {
+                "Müşteri_Kimliği": 238994216,
+                "Müşteri_Adı": "Çınardalı Tuğçe",
+                "Adet": 3,
+                "Toplam_Miktar": 625
+            },
+            {
+                "Müşteri_Kimliği": 308856575,
+                "Müşteri_Adı": "Kömürcü  Hakkı ",
+                "Adet": 2,
+                "Toplam_Miktar": 625
+            },
+            {
+                "Müşteri_Kimliği": 307794349,
+                "Müşteri_Adı": "Arslan Orhan ",
+                "Adet": 2,
+                "Toplam_Miktar": 617
+            },
+            {
+                "Müşteri_Kimliği": 267070121,
+                "Müşteri_Adı": "Kanat Agit",
+                "Adet": 2,
+                "Toplam_Miktar": 595
+            },
+            {
+                "Müşteri_Kimliği": 289260878,
+                "Müşteri_Adı": "Çetin İsa",
+                "Adet": 8,
+                "Toplam_Miktar": 568
+            },
+            {
+                "Müşteri_Kimliği": 216953266,
+                "Müşteri_Adı": "Demirbaş Emre",
+                "Adet": 1,
+                "Toplam_Miktar": 563
+            },
+            {
+                "Müşteri_Kimliği": 284212956,
+                "Müşteri_Adı": "bayatlı erdem",
+                "Adet": 2,
+                "Toplam_Miktar": 563
+            },
+            {
+                "Müşteri_Kimliği": 280129000,
+                "Müşteri_Adı": "Atar Yaşariye",
+                "Adet": 1,
+                "Toplam_Miktar": 500
+            },
+            {
+                "Müşteri_Kimliği": 323788334,
+                "Müşteri_Adı": "Koşar Abdullah",
+                "Adet": 1,
+                "Toplam_Miktar": 500
+            },
+            {
+                "Müşteri_Kimliği": 1691313738,
+                "Müşteri_Adı": "Yürük Enver",
+                "Adet": 1,
+                "Toplam_Miktar": 500
+            },
+            {
+                "Müşteri_Kimliği": 305489830,
+                "Müşteri_Adı": "Kaya Tamer",
+                "Adet": 1,
+                "Toplam_Miktar": 500
+            },
+            {
+                "Müşteri_Kimliği": 323510813,
+                "Müşteri_Adı": "Sayın Ömer",
+                "Adet": 1,
+                "Toplam_Miktar": 500
+            },
+            {
+                "Müşteri_Kimliği": 305089600,
+                "Müşteri_Adı": "Aktürk Yasin",
+                "Adet": 1,
+                "Toplam_Miktar": 500
+            },
+            {
+                "Müşteri_Kimliği": 303093641,
+                "Müşteri_Adı": "uysal ömer osman ",
+                "Adet": 1,
+                "Toplam_Miktar": 500
+            },
+            {
+                "Müşteri_Kimliği": 317361141,
+                "Müşteri_Adı": "İsti Abdullah",
+                "Adet": 1,
+                "Toplam_Miktar": 500
+            },
+            {
+                "Müşteri_Kimliği": 261640543,
+                "Müşteri_Adı": "Yılmaz Vedat",
+                "Adet": 1,
+                "Toplam_Miktar": 500
+            },
+            {
+                "Müşteri_Kimliği": 198706126,
+                "Müşteri_Adı": "Hasanoğlu Serkan",
+                "Adet": 1,
+                "Toplam_Miktar": 500
+            },
+            {
+                "Müşteri_Kimliği": 198817398,
+                "Müşteri_Adı": "Derman Naim ",
+                "Adet": 1,
+                "Toplam_Miktar": 500
+            },
+            {
+                "Müşteri_Kimliği": 165572218,
+                "Müşteri_Adı": "Akkoç Hanifi",
+                "Adet": 1,
+                "Toplam_Miktar": 500
+            },
+            {
+                "Müşteri_Kimliği": 30943375,
+                "Müşteri_Adı": "Yaylı Metin ",
+                "Adet": 1,
+                "Toplam_Miktar": 500
+            },
+            {
+                "Müşteri_Kimliği": 112508632,
+                "Müşteri_Adı": "Yavuz Emre",
+                "Adet": 2,
+                "Toplam_Miktar": 500
+            },
+            {
+                "Müşteri_Kimliği": 278808936,
+                "Müşteri_Adı": "Halil Apdul",
+                "Adet": 1,
+                "Toplam_Miktar": 500
+            },
+            {
+                "Müşteri_Kimliği": 280136559,
+                "Müşteri_Adı": "Ergül Firat",
+                "Adet": 1,
+                "Toplam_Miktar": 493
+            },
+            {
+                "Müşteri_Kimliği": 239035263,
+                "Müşteri_Adı": "Kökenler Mehmet",
+                "Adet": 1,
+                "Toplam_Miktar": 475
+            },
+            {
+                "Müşteri_Kimliği": 9070312,
+                "Müşteri_Adı": "Şişman Celal ",
+                "Adet": 3,
+                "Toplam_Miktar": 475
+            },
+            {
+                "Müşteri_Kimliği": 234966938,
+                "Müşteri_Adı": "Esen Bilge kağan",
+                "Adet": 4,
+                "Toplam_Miktar": 469
+            },
+            {
+                "Müşteri_Kimliği": 213096710,
+                "Müşteri_Adı": "Bağcı Rıdvan",
+                "Adet": 1,
+                "Toplam_Miktar": 463
+            },
+            {
+                "Müşteri_Kimliği": 289955066,
+                "Müşteri_Adı": "Özdağoğlu dönmez Yağmur ",
+                "Adet": 3,
+                "Toplam_Miktar": 463
+            },
+            {
+                "Müşteri_Kimliği": 200778707,
+                "Müşteri_Adı": "Metin Ufuk",
+                "Adet": 1,
+                "Toplam_Miktar": 438
+            },
+            {
+                "Müşteri_Kimliği": 276250878,
+                "Müşteri_Adı": "Tatu Ömer",
+                "Adet": 2,
+                "Toplam_Miktar": 427
+            },
+            {
+                "Müşteri_Kimliği": 246315206,
+                "Müşteri_Adı": "Çelik Murat",
+                "Adet": 2,
+                "Toplam_Miktar": 425
+            },
+            {
+                "Müşteri_Kimliği": 218004204,
+                "Müşteri_Adı": "özder Yaşar",
+                "Adet": 1,
+                "Toplam_Miktar": 413
+            },
+            {
+                "Müşteri_Kimliği": 298350513,
+                "Müşteri_Adı": "durmuş cengizhan",
+                "Adet": 1,
+                "Toplam_Miktar": 413
+            },
+            {
+                "Müşteri_Kimliği": 295039799,
+                "Müşteri_Adı": "Domaç  Soydan",
+                "Adet": 1,
+                "Toplam_Miktar": 375
+            },
+            {
+                "Müşteri_Kimliği": 234374766,
+                "Müşteri_Adı": "Adıgüzel Kürşat",
+                "Adet": 1,
+                "Toplam_Miktar": 375
+            },
+            {
+                "Müşteri_Kimliği": 256824518,
+                "Müşteri_Adı": "Sağırkaya Adem",
+                "Adet": 2,
+                "Toplam_Miktar": 375
+            },
+            {
+                "Müşteri_Kimliği": 200555512,
+                "Müşteri_Adı": "Daşdelen Mehmet",
+                "Adet": 1,
+                "Toplam_Miktar": 375
+            },
+            {
+                "Müşteri_Kimliği": 224815499,
+                "Müşteri_Adı": "Karagülle Zerrin",
+                "Adet": 1,
+                "Toplam_Miktar": 375
+            },
+            {
+                "Müşteri_Kimliği": 232899562,
+                "Müşteri_Adı": "Gölge Adem",
+                "Adet": 1,
+                "Toplam_Miktar": 375
+            },
+            {
+                "Müşteri_Kimliği": 199295542,
+                "Müşteri_Adı": "Heybeli Süeda ",
+                "Adet": 2,
+                "Toplam_Miktar": 375
+            },
+            {
+                "Müşteri_Kimliği": 45691650,
+                "Müşteri_Adı": "Ünsüz  Nurten ",
+                "Adet": 3,
+                "Toplam_Miktar": 375
+            },
+            {
+                "Müşteri_Kimliği": 275547931,
+                "Müşteri_Adı": "Korkmaz Ramazan",
+                "Adet": 1,
+                "Toplam_Miktar": 373
+            },
+            {
+                "Müşteri_Kimliği": 264703653,
+                "Müşteri_Adı": "Vardar Erhan",
+                "Adet": 1,
+                "Toplam_Miktar": 344
+            },
+            {
+                "Müşteri_Kimliği": 205329513,
+                "Müşteri_Adı": "Dalga Tuğba",
+                "Adet": 2,
+                "Toplam_Miktar": 325
+            },
+            {
+                "Müşteri_Kimliği": 246935580,
+                "Müşteri_Adı": "İnce  Şaban Berat ",
+                "Adet": 3,
+                "Toplam_Miktar": 325
+            },
+            {
+                "Müşteri_Kimliği": 1772566602,
+                "Müşteri_Adı": "CEBECİOĞLU İlhan",
+                "Adet": 1,
+                "Toplam_Miktar": 325
+            },
+            {
+                "Müşteri_Kimliği": 1705390700,
+                "Müşteri_Adı": "Beklen Ahmet",
+                "Adet": 1,
+                "Toplam_Miktar": 300
+            },
+            {
+                "Müşteri_Kimliği": 278825003,
+                "Müşteri_Adı": "Gulen Ahmet",
+                "Adet": 1,
+                "Toplam_Miktar": 300
+            },
+            {
+                "Müşteri_Kimliği": 280133400,
+                "Müşteri_Adı": "Turapoglu Bahattin",
+                "Adet": 2,
+                "Toplam_Miktar": 275
+            },
+            {
+                "Müşteri_Kimliği": 139452821,
+                "Müşteri_Adı": "Talay Tugay",
+                "Adet": 1,
+                "Toplam_Miktar": 273
+            },
+            {
+                "Müşteri_Kimliği": 44549669,
+                "Müşteri_Adı": "Özlenir Hayatican ",
+                "Adet": 2,
+                "Toplam_Miktar": 259
+            },
+            {
+                "Müşteri_Kimliği": 266477037,
+                "Müşteri_Adı": "Alimer Halve",
+                "Adet": 3,
+                "Toplam_Miktar": 258
+            },
+            {
+                "Müşteri_Kimliği": 270112417,
+                "Müşteri_Adı": "Yavuz Recep",
+                "Adet": 3,
+                "Toplam_Miktar": 255
+            },
+            {
+                "Müşteri_Kimliği": 202980153,
+                "Müşteri_Adı": "Ayar Uğur",
+                "Adet": 2,
+                "Toplam_Miktar": 251
+            },
+            {
+                "Müşteri_Kimliği": 275824812,
+                "Müşteri_Adı": "çolban muhammed",
+                "Adet": 1,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 278798590,
+                "Müşteri_Adı": "Verenbaş Veysel",
+                "Adet": 1,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 297495020,
+                "Müşteri_Adı": "Sandal Naci",
+                "Adet": 1,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 292901934,
+                "Müşteri_Adı": "Biltekin Zeynep",
+                "Adet": 2,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 285492157,
+                "Müşteri_Adı": "Keşli Emrah",
+                "Adet": 1,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 1870142722,
+                "Müşteri_Adı": "Yaman Abdullah ",
+                "Adet": 1,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 305446038,
+                "Müşteri_Adı": "Korucu Mehmet ercan",
+                "Adet": 1,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 299098410,
+                "Müşteri_Adı": "Sarıer  Fırat ",
+                "Adet": 2,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 319755409,
+                "Müşteri_Adı": "Çiçek Dursun",
+                "Adet": 1,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 1763878844,
+                "Müşteri_Adı": "Özkaya Hacı",
+                "Adet": 1,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 237505326,
+                "Müşteri_Adı": "Gürbüz Rıza",
+                "Adet": 1,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 241819105,
+                "Müşteri_Adı": "Sancar  Fehmi",
+                "Adet": 1,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 231529270,
+                "Müşteri_Adı": "Çevik Özge",
+                "Adet": 1,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 227011229,
+                "Müşteri_Adı": "Veziroğlu Arzu",
+                "Adet": 2,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 198672191,
+                "Müşteri_Adı": "tahmazoğlu İlayda",
+                "Adet": 1,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 66927545,
+                "Müşteri_Adı": "Yılmaz Canan ",
+                "Adet": 1,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 198475676,
+                "Müşteri_Adı": "Coşkun Hayriye",
+                "Adet": 1,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 198044410,
+                "Müşteri_Adı": "Saman Erhan",
+                "Adet": 1,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 213690730,
+                "Müşteri_Adı": "İlkis  Yalçın ",
+                "Adet": 1,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 206258339,
+                "Müşteri_Adı": "Anlar Mehmet",
+                "Adet": 1,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 233498459,
+                "Müşteri_Adı": "Kantayım  Soykan ",
+                "Adet": 1,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 104073254,
+                "Müşteri_Adı": "Karakaya Huriye ",
+                "Adet": 1,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 45939007,
+                "Müşteri_Adı": "Alparslan Fatma ",
+                "Adet": 1,
+                "Toplam_Miktar": 250
+            },
+            {
+                "Müşteri_Kimliği": 284675617,
+                "Müşteri_Adı": "Halil Kasim",
+                "Adet": 1,
+                "Toplam_Miktar": 248
+            },
+            {
+                "Müşteri_Kimliği": 226916591,
+                "Müşteri_Adı": "Demir Ömer",
+                "Adet": 1,
+                "Toplam_Miktar": 248
+            },
+            {
+                "Müşteri_Kimliği": 205072623,
+                "Müşteri_Adı": "Atansefer  Veysi ",
+                "Adet": 2,
+                "Toplam_Miktar": 245
+            },
+            {
+                "Müşteri_Kimliği": 274970925,
+                "Müşteri_Adı": "Fil Salih Deniz ",
+                "Adet": 1,
+                "Toplam_Miktar": 238
+            },
+            {
+                "Müşteri_Kimliği": 237292581,
+                "Müşteri_Adı": "Demirkol  Mehmet",
+                "Adet": 1,
+                "Toplam_Miktar": 238
+            },
+            {
+                "Müşteri_Kimliği": 311765248,
+                "Müşteri_Adı": "Durmuş  İsmail",
+                "Adet": 2,
+                "Toplam_Miktar": 225
+            },
+            {
+                "Müşteri_Kimliği": 247649931,
+                "Müşteri_Adı": "Çam Alparslan aygün",
+                "Adet": 1,
+                "Toplam_Miktar": 225
+            },
+            {
+                "Müşteri_Kimliği": 278799883,
+                "Müşteri_Adı": "Toplu Yakup",
+                "Adet": 1,
+                "Toplam_Miktar": 213
+            },
+            {
+                "Müşteri_Kimliği": 203275040,
+                "Müşteri_Adı": "Koca Hakan",
+                "Adet": 2,
+                "Toplam_Miktar": 200
+            },
+            {
+                "Müşteri_Kimliği": 257097011,
+                "Müşteri_Adı": "Yaşar Bülent",
+                "Adet": 1,
+                "Toplam_Miktar": 200
+            },
+            {
+                "Müşteri_Kimliği": 265125030,
+                "Müşteri_Adı": "Öklük Murat",
+                "Adet": 1,
+                "Toplam_Miktar": 200
+            },
+            {
+                "Müşteri_Kimliği": 278598730,
+                "Müşteri_Adı": "Arslan Cuma Ali",
+                "Adet": 2,
+                "Toplam_Miktar": 193
+            },
+            {
+                "Müşteri_Kimliği": 216981515,
+                "Müşteri_Adı": "Göktaş  Volkan ",
+                "Adet": 2,
+                "Toplam_Miktar": 190
+            },
+            {
+                "Müşteri_Kimliği": 319814574,
+                "Müşteri_Adı": "Kolçak Aytaç",
+                "Adet": 1,
+                "Toplam_Miktar": 188
+            },
+            {
+                "Müşteri_Kimliği": 182249787,
+                "Müşteri_Adı": "Yılmaz  Tahir ",
+                "Adet": 2,
+                "Toplam_Miktar": 177
+            },
+            {
+                "Müşteri_Kimliği": 239615368,
+                "Müşteri_Adı": "Demirel Hatice",
+                "Adet": 1,
+                "Toplam_Miktar": 175
+            },
+            {
+                "Müşteri_Kimliği": 198685196,
+                "Müşteri_Adı": "Beştepe  Adem ",
+                "Adet": 1,
+                "Toplam_Miktar": 175
+            },
+            {
+                "Müşteri_Kimliği": 279036801,
+                "Müşteri_Adı": "Bilben Nuray",
+                "Adet": 3,
+                "Toplam_Miktar": 175
+            },
+            {
+                "Müşteri_Kimliği": 198739269,
+                "Müşteri_Adı": "Kaya Berkan",
+                "Adet": 1,
+                "Toplam_Miktar": 175
+            },
+            {
+                "Müşteri_Kimliği": 191215778,
+                "Müşteri_Adı": "Sırık Fatih",
+                "Adet": 1,
+                "Toplam_Miktar": 171
+            },
+            {
+                "Müşteri_Kimliği": 273726697,
+                "Müşteri_Adı": "Atansefer Rıdvan",
+                "Adet": 1,
+                "Toplam_Miktar": 150
+            },
+            {
+                "Müşteri_Kimliği": 322256015,
+                "Müşteri_Adı": "Dökmeci Muhammet",
+                "Adet": 1,
+                "Toplam_Miktar": 150
+            },
+            {
+                "Müşteri_Kimliği": 265602082,
+                "Müşteri_Adı": "Çakır  Ayşe nur",
+                "Adet": 1,
+                "Toplam_Miktar": 150
+            },
+            {
+                "Müşteri_Kimliği": 161719191,
+                "Müşteri_Adı": "Severler Süheyla",
+                "Adet": 1,
+                "Toplam_Miktar": 150
+            },
+            {
+                "Müşteri_Kimliği": 235231740,
+                "Müşteri_Adı": "Gülmez Yaşar",
+                "Adet": 1,
+                "Toplam_Miktar": 149
+            },
+            {
+                "Müşteri_Kimliği": 259907338,
+                "Müşteri_Adı": "Ertunga Berdan",
+                "Adet": 1,
+                "Toplam_Miktar": 149
+            },
+            {
+                "Müşteri_Kimliği": 37989461,
+                "Müşteri_Adı": "Üstünışık Berrin ",
+                "Adet": 2,
+                "Toplam_Miktar": 147
+            },
+            {
+                "Müşteri_Kimliği": 83224382,
+                "Müşteri_Adı": "Tınta Mehmet ",
+                "Adet": 1,
+                "Toplam_Miktar": 135
+            },
+            {
+                "Müşteri_Kimliği": 280178478,
+                "Müşteri_Adı": "Şahin Aynur",
+                "Adet": 1,
+                "Toplam_Miktar": 125
+            },
+            {
+                "Müşteri_Kimliği": 278795678,
+                "Müşteri_Adı": "Işik Mehmet",
+                "Adet": 1,
+                "Toplam_Miktar": 125
+            },
+            {
+                "Müşteri_Kimliği": 278803753,
+                "Müşteri_Adı": "Tleumuratova Perizat",
+                "Adet": 1,
+                "Toplam_Miktar": 125
+            },
+            {
+                "Müşteri_Kimliği": 301694997,
+                "Müşteri_Adı": "Koçak Yunus",
+                "Adet": 1,
+                "Toplam_Miktar": 125
+            },
+            {
+                "Müşteri_Kimliği": 255115706,
+                "Müşteri_Adı": "Doğan Meltem",
+                "Adet": 1,
+                "Toplam_Miktar": 125
+            },
+            {
+                "Müşteri_Kimliği": 256701561,
+                "Müşteri_Adı": "Aktaş Metin",
+                "Adet": 1,
+                "Toplam_Miktar": 125
+            },
+            {
+                "Müşteri_Kimliği": 279256786,
+                "Müşteri_Adı": "Günüç Zübeyde burcu",
+                "Adet": 1,
+                "Toplam_Miktar": 125
+            },
+            {
+                "Müşteri_Kimliği": 232651451,
+                "Müşteri_Adı": "Gürbüz Büşra",
+                "Adet": 1,
+                "Toplam_Miktar": 125
+            },
+            {
+                "Müşteri_Kimliği": 234884488,
+                "Müşteri_Adı": "Çetinkaya Mehmet",
+                "Adet": 1,
+                "Toplam_Miktar": 125
+            },
+            {
+                "Müşteri_Kimliği": 238156998,
+                "Müşteri_Adı": "Yürek Esat",
+                "Adet": 1,
+                "Toplam_Miktar": 125
+            },
+            {
+                "Müşteri_Kimliği": 239881383,
+                "Müşteri_Adı": "Omay Ufuk",
+                "Adet": 1,
+                "Toplam_Miktar": 125
+            },
+            {
+                "Müşteri_Kimliği": 177663838,
+                "Müşteri_Adı": "Hacıyanakos Sotiri",
+                "Adet": 1,
+                "Toplam_Miktar": 125
+            },
+            {
+                "Müşteri_Kimliği": 228249943,
+                "Müşteri_Adı": "Gül Cüneyit",
+                "Adet": 2,
+                "Toplam_Miktar": 123
+            },
+            {
+                "Müşteri_Kimliği": 198263468,
+                "Müşteri_Adı": "Tarzan Serkan",
+                "Adet": 3,
+                "Toplam_Miktar": 103
+            },
+            {
+                "Müşteri_Kimliği": 168065807,
+                "Müşteri_Adı": "Haznedaroğlu Mert",
+                "Adet": 2,
+                "Toplam_Miktar": 100
+            },
+            {
+                "Müşteri_Kimliği": 198941991,
+                "Müşteri_Adı": "Genç Filiz",
+                "Adet": 1,
+                "Toplam_Miktar": 100
+            },
+            {
+                "Müşteri_Kimliği": 238114145,
+                "Müşteri_Adı": "Erdembay Gizem",
+                "Adet": 1,
+                "Toplam_Miktar": 100
+            },
+            {
+                "Müşteri_Kimliği": 243026150,
+                "Müşteri_Adı": "Karadağ Mehmet Emre",
+                "Adet": 1,
+                "Toplam_Miktar": 100
+            },
+            {
+                "Müşteri_Kimliği": 237816331,
+                "Müşteri_Adı": "Palaz İbrahim",
+                "Adet": 1,
+                "Toplam_Miktar": 98
+            },
+            {
+                "Müşteri_Kimliği": 151479186,
+                "Müşteri_Adı": "Uçar Hasan",
+                "Adet": 2,
+                "Toplam_Miktar": 97
+            },
+            {
+                "Müşteri_Kimliği": 198052559,
+                "Müşteri_Adı": "kaptanoğlu Fuat",
+                "Adet": 1,
+                "Toplam_Miktar": 95
+            },
+            {
+                "Müşteri_Kimliği": 234369830,
+                "Müşteri_Adı": "Köylüce Furkan",
+                "Adet": 2,
+                "Toplam_Miktar": 95
+            },
+            {
+                "Müşteri_Kimliği": 217840607,
+                "Müşteri_Adı": "Gürbüz Turna ",
+                "Adet": 1,
+                "Toplam_Miktar": 88
+            },
+            {
+                "Müşteri_Kimliği": 55703445,
+                "Müşteri_Adı": "Irım Emine ",
+                "Adet": 1,
+                "Toplam_Miktar": 88
+            },
+            {
+                "Müşteri_Kimliği": 198782306,
+                "Müşteri_Adı": "kayabaşı burak",
+                "Adet": 1,
+                "Toplam_Miktar": 75
+            },
+            {
+                "Müşteri_Kimliği": 245065094,
+                "Müşteri_Adı": "Çiftçi Oğuz",
+                "Adet": 1,
+                "Toplam_Miktar": 75
+            },
+            {
+                "Müşteri_Kimliği": 320000225,
+                "Müşteri_Adı": "Özkoyuncu Yaşar",
+                "Adet": 1,
+                "Toplam_Miktar": 75
+            },
+            {
+                "Müşteri_Kimliği": 1718445176,
+                "Müşteri_Adı": "Öksüz Kemal",
+                "Adet": 1,
+                "Toplam_Miktar": 75
+            },
+            {
+                "Müşteri_Kimliği": 259373809,
+                "Müşteri_Adı": "Gök Fatma ",
+                "Adet": 1,
+                "Toplam_Miktar": 75
+            },
+            {
+                "Müşteri_Kimliği": 302190124,
+                "Müşteri_Adı": "Güneş Arzu",
+                "Adet": 1,
+                "Toplam_Miktar": 74
+            },
+            {
+                "Müşteri_Kimliği": 96602408,
+                "Müşteri_Adı": "Alptekin Soner ",
+                "Adet": 1,
+                "Toplam_Miktar": 63
+            },
+            {
+                "Müşteri_Kimliği": 303249966,
+                "Müşteri_Adı": "Kızılcıklılar  Selma",
+                "Adet": 1,
+                "Toplam_Miktar": 60
+            },
+            {
+                "Müşteri_Kimliği": 281970425,
+                "Müşteri_Adı": "Işık Tülay",
+                "Adet": 1,
+                "Toplam_Miktar": 50
+            },
+            {
+                "Müşteri_Kimliği": 280148796,
+                "Müşteri_Adı": "güven okan",
+                "Adet": 1,
+                "Toplam_Miktar": 50
+            },
+            {
+                "Müşteri_Kimliği": 257054725,
+                "Müşteri_Adı": "Akpirinç Esat",
+                "Adet": 1,
+                "Toplam_Miktar": 49
+            },
+            {
+                "Müşteri_Kimliği": 179252237,
+                "Müşteri_Adı": "tunca Semih Ramazan",
+                "Adet": 1,
+                "Toplam_Miktar": 49
+            },
+            {
+                "Müşteri_Kimliği": 323871122,
+                "Müşteri_Adı": "Güven  Abdullah",
+                "Adet": 2,
+                "Toplam_Miktar": 48
+            },
+            {
+                "Müşteri_Kimliği": 221832180,
+                "Müşteri_Adı": "Öztürk Engin",
+                "Adet": 1,
+                "Toplam_Miktar": 48
+            },
+            {
+                "Müşteri_Kimliği": 295341780,
+                "Müşteri_Adı": "Payo Yusuf",
+                "Adet": 2,
+                "Toplam_Miktar": 48
+            },
+            {
+                "Müşteri_Kimliği": 309152749,
+                "Müşteri_Adı": "Karagöz Okan",
+                "Adet": 1,
+                "Toplam_Miktar": 40
+            },
+            {
+                "Müşteri_Kimliği": 228704178,
+                "Müşteri_Adı": "Aksu Songül",
+                "Adet": 1,
+                "Toplam_Miktar": 40
+            },
+            {
+                "Müşteri_Kimliği": 310977521,
+                "Müşteri_Adı": "Keskin Kerem ",
+                "Adet": 1,
+                "Toplam_Miktar": 38
+            },
+            {
+                "Müşteri_Kimliği": 323454551,
+                "Müşteri_Adı": "Balbaba Kamil",
+                "Adet": 1,
+                "Toplam_Miktar": 35
+            },
+            {
+                "Müşteri_Kimliği": 320678467,
+                "Müşteri_Adı": "Bilgen Emin",
+                "Adet": 1,
+                "Toplam_Miktar": 35
+            },
+            {
+                "Müşteri_Kimliği": 259096419,
+                "Müşteri_Adı": "Işıkca Muhammed",
+                "Adet": 1,
+                "Toplam_Miktar": 34
+            },
+            {
+                "Müşteri_Kimliği": 234675981,
+                "Müşteri_Adı": "Güven Sinan",
+                "Adet": 1,
+                "Toplam_Miktar": 33
+            },
+            {
+                "Müşteri_Kimliği": 321404316,
+                "Müşteri_Adı": "Kurnaz Zehra",
+                "Adet": 1,
+                "Toplam_Miktar": 30
+            },
+            {
+                "Müşteri_Kimliği": 157767189,
+                "Müşteri_Adı": "Kartal Dilara",
+                "Adet": 1,
+                "Toplam_Miktar": 27
+            },
+            {
+                "Müşteri_Kimliği": 279772401,
+                "Müşteri_Adı": "Gültekin  Sevilay",
+                "Adet": 1,
+                "Toplam_Miktar": 25
+            },
+            {
+                "Müşteri_Kimliği": 285169944,
+                "Müşteri_Adı": "Dabansız Hüseyin Toprak",
+                "Adet": 1,
+                "Toplam_Miktar": 25
+            },
+            {
+                "Müşteri_Kimliği": 62004087,
+                "Müşteri_Adı": "Öngün Turan ",
+                "Adet": 1,
+                "Toplam_Miktar": 23
+            },
+            {
+                "Müşteri_Kimliği": 293929364,
+                "Müşteri_Adı": "Avcu Ufuk",
+                "Adet": 1,
+                "Toplam_Miktar": 23
+            },
+            {
+                "Müşteri_Kimliği": 217751282,
+                "Müşteri_Adı": "Ertaş Mehmet salih",
+                "Adet": 1,
+                "Toplam_Miktar": 23
+            },
+            {
+                "Müşteri_Kimliği": 48833496,
+                "Müşteri_Adı": "Dağoğlu Yusuf ",
+                "Adet": 1,
+                "Toplam_Miktar": 22
+            },
+            {
+                "Müşteri_Kimliği": 293273502,
+                "Müşteri_Adı": "Urul Tevride gül",
+                "Adet": 1,
+                "Toplam_Miktar": 18
+            }
+        ]
+    },
+    {
         "date": "2025-09-15_02:00:01",
         "timestamp": "2025-09-16T02:00:01.382037",
         "data": [
