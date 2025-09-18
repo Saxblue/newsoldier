@@ -16072,5 +16072,15 @@
     "last_login_date": "2025-09-14T16:53:44.157",
     "partner_name": "Salamisbahis-18756287",
     "birth_date": "1990-02-12T00:00:00"
+  },
+  {
+    "member_id": "324640776",
+    "username": "Karasoy58",
+    "full_name": "Karasoy Mustafa",
+    "is_active": true,
+    "created_at": "2025-09-19T01:43:24.764728",
+    "last_deposit_date": null,
+    "days_without_deposit": 0,
+    "api_data": {}
   }
 ]
